@@ -1,0 +1,40 @@
+# FastAPI e servidor
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Supabase
+supabase==2.3.3
+
+# Pydantic settings
+pydantic==2.6.0
+pydantic-settings==2.1.0
+
+# Criptografia
+cryptography==42.0.0
+
+# HTTP client
+httpx==0.26.0
+
+# Celery e Redis (tasks assincronas)
+celery==5.3.6
+redis==5.0.1
+
+# Processamento de imagens
+Pillow==10.2.0
+
+# AWS S3 (Cloudflare R2)
+boto3==1.34.28
+
+# Email
+resend==0.8.0
+
+# OpenRouter/OpenAI SDK
+openai==1.10.0
+
+# Pandas/NumPy (predicoes)
+pandas==2.2.0
+numpy==1.26.3
+
+# Python dotenv
+python-dotenv==1.0.1

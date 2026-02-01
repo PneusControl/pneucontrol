@@ -1,0 +1,7 @@
+{
+  "name": "PneuControl - Gestão de Frotas",
+  "description": "Sistema avançado de controle de uso e consumo de pneus para linha pesada, com interface inspirada no Panze Studio para web e design mobile moderno tipo fintech.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
