@@ -7,8 +7,8 @@ import { useAuth } from '@/components/providers/AuthProvider'
 interface Vehicle {
     id: string
     plate: string
-    brand: str
-    model: str
+    brand: string
+    model: string
     year: number
     current_km: number
     axle_configuration: any
@@ -26,7 +26,7 @@ export default function VehiclesPage() {
         }
     }, [user])
 
-    const fetchVehicles() = async () => {
+    const fetchVehicles = async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/vehicles?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()

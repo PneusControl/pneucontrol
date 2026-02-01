@@ -6,7 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 
 interface Supplier {
     id: string
-    name: str
+    name: string
     cnpj: string
     contact_name?: string
     email?: string

@@ -10,7 +10,7 @@ interface Invoice {
     issuer_name: string
     issue_date: string
     total_value: number
-    status: str
+    status: string
 }
 
 export default function InvoicesPage() {
