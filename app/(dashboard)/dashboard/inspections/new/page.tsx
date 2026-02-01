@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { Truck, Search, Gauge, Ruler, Camera, CheckCircle2, AlertCircle, Loader2, ChevronRight, ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -33,6 +33,14 @@ interface InspectionItemData {
 }
 
 export default function NewInspectionPage() {
+    return (
+        <Suspense fallback={<div className="p-10 flex justify-center"><Loader2 className="animate-spin text-indigo-600" size={40} /></div>}>
+            <NewInspectionContent />
+        </Suspense>
+    )
+}
+
+function NewInspectionContent() {
     const { user } = useAuth()
     const router = useRouter()
     const tenantId = user?.user_metadata?.tenant_id
