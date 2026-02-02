@@ -29,7 +29,7 @@ export default function TiresPage() {
 
     const fetchTires = async () => {
         try {
-            const response = await fetch(`${${API_BASE_URL}}/api/v1/tires?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/tires?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setTires(data)
         } catch (err) {

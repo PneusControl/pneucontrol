@@ -29,7 +29,7 @@ export default function InvoicesPage() {
 
     const fetchInvoices = async () => {
         try {
-            const response = await fetch(`${${API_BASE_URL}}/api/v1/invoices?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/invoices?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setInvoices(data)
         } catch (err) {
@@ -48,7 +48,7 @@ export default function InvoicesPage() {
         formData.append('file', file)
 
         try {
-            const response = await fetch(`${${API_BASE_URL}}/api/v1/invoices/upload-xml?tenant_id=${user.user_metadata.tenant_id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/invoices/upload-xml?tenant_id=${user.user_metadata.tenant_id}`, {
                 method: 'POST',
                 body: formData
             })

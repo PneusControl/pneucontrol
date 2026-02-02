@@ -30,7 +30,7 @@ export default function NewCompanyPage() {
         setLoading(true)
 
         try {
-            const response = await fetch(`${${API_BASE_URL}}/api/v1/system/companies`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/system/companies`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

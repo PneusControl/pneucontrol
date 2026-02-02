@@ -29,7 +29,7 @@ export default function SuppliersPage() {
 
     const fetchSuppliers = async () => {
         try {
-            const response = await fetch(`${${API_BASE_URL}}/api/v1/suppliers?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/suppliers?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setSuppliers(data)
         } catch (err) {

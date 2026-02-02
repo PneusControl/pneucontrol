@@ -29,7 +29,7 @@ export default function VehiclesPage() {
 
     const fetchVehicles = async () => {
         try {
-            const response = await fetch(`${${API_BASE_URL}}/api/v1/vehicles?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/vehicles?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setVehicles(data)
         } catch (err) {
