@@ -1,6 +1,5 @@
-from app.core.config import get_settings
-
-settings = get_settings()
+from celery import Celery
+from app.core.config import settings
 
 celery_app = Celery(
     "pneucontrol_tasks",
@@ -23,5 +22,5 @@ def update_tire_predictions(tenant_id: str):
     """
     from app.services.prediction.engine import PredictionService
     # Logica de busca de dados no Supabase e execucao do motor
-    print(f"Recalculando predicoes para o tenant: {tenant__id}")
+    print(f"Recalculando predicoes para o tenant: {tenant_id}")
     return True

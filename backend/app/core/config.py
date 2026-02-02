@@ -35,3 +35,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Retorna instancia cacheada das configuracoes."""
     return Settings()
+
+
+# Instancia global para facilitar importacoes
+settings = get_settings()
