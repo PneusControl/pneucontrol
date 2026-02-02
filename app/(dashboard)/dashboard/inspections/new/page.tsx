@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect, Suspense } from 'react'
 import { Truck, Search, Gauge, Ruler, Camera, CheckCircle2, AlertCircle, Loader2, ChevronRight, ArrowLeft } from 'lucide-react'
@@ -75,7 +76,7 @@ function NewInspectionContent() {
         setLoading(true)
         try {
             // 1. Tentar API
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+            const baseUrl = API_BASE_URL
             const response = await fetch(`${baseUrl}/api/v1/vehicles?tenant_id=${tenantId}&plate=${searchPlate.toUpperCase()}`)
 
             if (response.ok) {
@@ -121,7 +122,7 @@ function NewInspectionContent() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+            const baseUrl = API_BASE_URL
             const response = await fetch(`${baseUrl}/api/v1/inspections/analyze-damage?tenant_id=${tenantId}&tire_id=${tireId}`, {
                 method: 'POST',
                 body: formData
@@ -177,7 +178,7 @@ function NewInspectionContent() {
 
         try {
             // Tentar enviar para o Backend
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+            const baseUrl = API_BASE_URL
             const response = await fetch(`${baseUrl}/api/v1/inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

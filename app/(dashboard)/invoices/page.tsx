@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { FileText, Upload, CheckCircle2, AlertCircle, Loader2, Download, Search, Eye } from 'lucide-react'
@@ -28,7 +29,7 @@ export default function InvoicesPage() {
 
     const fetchInvoices = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/invoices?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${${API_BASE_URL}}/api/v1/invoices?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setInvoices(data)
         } catch (err) {
@@ -47,7 +48,7 @@ export default function InvoicesPage() {
         formData.append('file', file)
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/invoices/upload-xml?tenant_id=${user.user_metadata.tenant_id}`, {
+            const response = await fetch(`${${API_BASE_URL}}/api/v1/invoices/upload-xml?tenant_id=${user.user_metadata.tenant_id}`, {
                 method: 'POST',
                 body: formData
             })

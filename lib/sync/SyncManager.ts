@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/lib/api-config'
 import { db, type PendingInspection } from '../db';
 
 export class SyncManager {
@@ -27,7 +28,7 @@ export class SyncManager {
                 return;
             }
 
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const baseUrl = API_BASE_URL;
 
             for (const inspection of pending) {
                 try {

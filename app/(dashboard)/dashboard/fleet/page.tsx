@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { Truck, Search, Plus, MapPin, Gauge, AlertCircle, Loader2 } from 'lucide-react'
@@ -31,7 +32,7 @@ export default function MobileVehiclesPage() {
                 if (cached.length > 0) setVehicles(cached as any)
 
                 // Tenta atualizar da API
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                const baseUrl = API_BASE_URL
                 const response = await fetch(`${baseUrl}/api/v1/vehicles?tenant_id=${tenantId}`)
                 if (response.ok) {
                     const data = await response.json()

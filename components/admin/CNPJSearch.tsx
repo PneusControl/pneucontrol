@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Search, Loader2, Check, AlertCircle } from 'lucide-react'
+import { API_BASE_URL } from '@/lib/api-config'
 
 interface CNPJData {
     razao_social: string
@@ -34,7 +35,7 @@ export default function CNPJSearch({ onSuccess }: CNPJSearchProps) {
 
         try {
             const cleanCnpj = cnpj.replace(/\D/g, '')
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/cnpj/${cleanCnpj}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/cnpj/${cleanCnpj}`)
 
             if (!response.ok) throw new Error('CNPJ não encontrado ou erro na busca.')
 

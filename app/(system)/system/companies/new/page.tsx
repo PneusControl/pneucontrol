@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -29,7 +30,7 @@ export default function NewCompanyPage() {
         setLoading(true)
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/system/companies`, {
+            const response = await fetch(`${${API_BASE_URL}}/api/v1/system/companies`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

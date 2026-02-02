@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { Package, Search, Ruler, AlertCircle, Loader2, ArrowRight } from 'lucide-react'
@@ -30,7 +31,7 @@ export default function MobileInventoryPage() {
                 if (cached.length > 0) setTires(cached as any)
 
                 // Tenta API
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                const baseUrl = API_BASE_URL
                 const response = await fetch(`${baseUrl}/api/v1/tires?tenant_id=${tenantId}`)
                 if (response.ok) {
                     const data = await response.json()

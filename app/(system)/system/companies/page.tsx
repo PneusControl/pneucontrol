@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { Plus, Building2, Search, Loader2, MoreVertical, ExternalLink } from 'lucide-react'
@@ -19,7 +20,7 @@ export default function CompaniesPage() {
     useEffect(() => {
         const fetchCompanies = async () => {
             try {
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                const baseUrl = API_BASE_URL
                 const response = await fetch(`${baseUrl}/api/v1/system/companies`)
                 const data = await response.json()
                 setCompanies(data)

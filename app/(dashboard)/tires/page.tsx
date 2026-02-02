@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { Plus, Search, Database, ArrowUpDown, FileDown, Upload, Loader2, MoreVertical } from 'lucide-react'
@@ -28,7 +29,7 @@ export default function TiresPage() {
 
     const fetchTires = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/tires?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${${API_BASE_URL}}/api/v1/tires?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setTires(data)
         } catch (err) {

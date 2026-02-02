@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { Plus, Search, Truck, Settings2, BarChart3, AlertTriangle, Loader2 } from 'lucide-react'
@@ -28,7 +29,7 @@ export default function VehiclesPage() {
 
     const fetchVehicles = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/vehicles?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${${API_BASE_URL}}/api/v1/vehicles?tenant_id=${user.user_metadata.tenant_id}`)
             const data = await response.json()
             setVehicles(data)
         } catch (err) {

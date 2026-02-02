@@ -1,4 +1,5 @@
 'use client'
+import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
 import { Plus, FileText, Search, Loader2, Calendar, Download, Eye } from 'lucide-react'
@@ -29,7 +30,7 @@ export default function InvoicesHistoryPage() {
             if (!tenantId) return
             setLoading(true)
             try {
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                const baseUrl = API_BASE_URL
                 const response = await fetch(`${baseUrl}/api/v1/invoices?tenant_id=${tenantId}`)
                 const data = await response.json()
                 setInvoices(Array.isArray(data) ? data : [])
