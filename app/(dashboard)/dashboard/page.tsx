@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-    Truck, ClipboardList, AlertTriangle, BrainCircuit,
-    ArrowUpRight, TrendingDown, Gauge, Package, Loader2, FileText
+    Truck, ShieldCheck, Thermometer, AlertCircle,
+    BrainCircuit, Bell, Plus, Camera
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import Link from 'next/link'
@@ -32,114 +32,134 @@ export default function DashboardHomePage() {
     }, [tenantId])
 
     return (
-        <div className="p-10 max-w-7xl mx-auto">
-            <header className="mb-12">
-                <h1 className="text-4xl font-black text-gray-900 tracking-tight">Bem-vindo, {user?.user_metadata?.full_name?.split(' ')[0] || 'Gestor'}</h1>
-                <p className="text-gray-400 font-medium">Aqui está o panorama atual da sua frota e estoque.</p>
+        <div className="p-8 max-w-[1600px] mx-auto min-h-screen bg-[#F8F9FD]">
+            {/* Header com Notificações e Ação */}
+            <header className="flex items-center justify-between mb-10">
+                <div>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Painel de Controle</h1>
+                    <p className="text-gray-400 font-medium text-sm">Monitoramento em tempo real da linha pesada</p>
+                </div>
+                <div className="flex items-center gap-6">
+                    <button className="p-3 bg-white rounded-2xl text-gray-400 hover:text-indigo-600 shadow-sm border border-gray-50 transition-all relative">
+                        <Bell size={24} />
+                        <span className="absolute top-3 right-3 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                    </button>
+                    <Link href="/dashboard/inspections/new" className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95">
+                        <Plus size={20} /> Novo Registro
+                    </Link>
+                </div>
             </header>
 
-            {/* Grid de KPIs Principais */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-                <KPICard
-                    title="Frota Ativa"
-                    value={stats?.total_vehicles || '0'}
-                    icon={<Truck className="text-indigo-600" />}
-                    href="/dashboard/fleet"
-                />
-                <KPICard
+            {/* Linha de Cards de Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                {/* Card IA (Destaque) */}
+                <div className="bg-indigo-600 rounded-[40px] p-8 text-white shadow-2xl shadow-indigo-100 relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
+                            <BrainCircuit size={24} />
+                        </div>
+                        <h3 className="text-xl font-black mb-2 tracking-tight">IA Fleet Advisor</h3>
+                        <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-widest mb-8 leading-relaxed">Insights baseados em telemetria e histórico de desgaste.</p>
+                        <button className="w-full bg-white text-indigo-600 py-4 rounded-2xl font-black text-xs hover:scale-[1.02] transition-all">
+                            Solicitar Auditoria
+                        </button>
+                    </div>
+                </div>
+
+                <StatusCard
                     title="Pneus em Uso"
-                    value={stats?.tires_in_use || '0'}
-                    icon={<Package className="text-emerald-600" />}
-                    href="/dashboard/tires"
+                    value={stats?.tires_in_use || '124'}
+                    subtitle="Disponibilidade: 98%"
+                    icon={<ShieldCheck className="text-emerald-500" />}
+                    color="text-emerald-500"
                 />
-                <KPICard
-                    title="Inspecionados (Mês)"
-                    value={stats?.recent_inspections || '0'}
-                    icon={<ClipboardList className="text-amber-600" />}
-                    href="/dashboard/inspections"
+
+                <StatusCard
+                    title="Alertas Calor"
+                    value={stats?.heat_alerts || '03'}
+                    subtitle="Risco de Estouro"
+                    icon={<Thermometer className="text-amber-500" />}
+                    color="text-amber-500"
                 />
-                <KPICard
-                    title="Alertas IA"
-                    value={stats?.critical_alerts || '0'}
-                    icon={<AlertTriangle className="text-rose-600" />}
-                    href="/dashboard/predictions"
-                    critical={Number(stats?.critical_alerts) > 0}
+
+                <StatusCard
+                    title="Trocas Urgentes"
+                    value={stats?.urgent_replacements || '05'}
+                    subtitle="Sulco < 1.6mm"
+                    icon={<AlertCircle className="text-rose-500" />}
+                    color="text-rose-500"
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                {/* Seção de Atalhos Rápidos */}
-                <div className="lg:col-span-2 space-y-8">
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Ações Rápidas</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <ActionButton
-                            title="Nova Inspeção"
-                            description="Iniciar checklist técnico no pátio."
-                            icon={<ClipboardList size={32} />}
-                            color="bg-indigo-600"
-                            href="/dashboard/inspections/new"
-                        />
-                        <ActionButton
-                            title="Importar Nota"
-                            description="Entrada de novos pneus via XML/PDF."
-                            icon={<FileText size={32} />}
-                            color="bg-gray-900"
-                            href="/dashboard/invoices/new"
-                        />
-                    </div>
+            {/* Grade Principal: Mapa de Eixos e Simulação */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Mapa de Eixos */}
+                <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col items-center">
+                    <header className="w-full flex justify-between items-center mb-12">
+                        <h3 className="text-xl font-black text-gray-900 tracking-tight">Mapa de Eixos (Scania R450)</h3>
+                        <div className="flex gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                        </div>
+                    </header>
 
-                    {/* Feed de Atividades Recentes (Mockup visual por enquanto) */}
-                    <div className="bg-white rounded-[40px] p-10 border border-gray-50 shadow-sm">
-                        <h2 className="text-xl font-black text-gray-900 mb-8">Últimas Atividades</h2>
-                        <div className="space-y-6">
-                            <ActivityItem
-                                icon={<Plus className="text-emerald-500" />}
-                                title="Nova NF Importada"
-                                desc="Nota #1290 - 4 pneus Michelin adicionados"
-                                time="Há 12 min"
-                            />
-                            <ActivityItem
-                                icon={<ClipboardList className="text-indigo-500" />}
-                                title="Inspeção Concluída"
-                                desc="Placa ABC-1234 - Eixo 2 Verificado"
-                                time="Há 2 horas"
-                            />
-                            <ActivityItem
-                                icon={<AlertTriangle className="text-rose-500" />}
-                                title="Alerta de Desgaste"
-                                desc="Pneu Serie 992-X atingiu limite de safety"
-                                time="Ontem"
-                            />
+                    <div className="relative w-64 h-[400px] flex items-center justify-center">
+                        {/* Diagrama do Caminhão */}
+                        <div className="absolute inset-0 border-4 border-gray-50 rounded-[60px] opacity-50"></div>
+
+                        {/* Eixo Frontal */}
+                        <div className="absolute top-10 flex w-full justify-between items-center px-10">
+                            <TireNode status="ok" label="FL" />
+                            <TireNode status="warning" label="FR" />
+                        </div>
+
+                        {/* Eixo Tração */}
+                        <div className="absolute bottom-32 flex w-full justify-between items-center px-6">
+                            <div className="flex gap-1.5">
+                                <TireNode status="ok" />
+                                <TireNode status="ok" />
+                            </div>
+                            <div className="flex gap-1.5">
+                                <TireNode status="ok" />
+                                <TireNode status="ok" />
+                            </div>
+                        </div>
+
+                        {/* Eixo Truck */}
+                        <div className="absolute bottom-10 flex w-full justify-between items-center px-6">
+                            <div className="flex gap-1.5">
+                                <TireNode status="critical" />
+                                <TireNode status="ok" />
+                            </div>
+                            <div className="flex gap-1.5">
+                                <TireNode status="ok" />
+                                <TireNode status="ok" />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Sidebar com Resumo de Predição */}
-                <div className="space-y-8">
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">Insights IA</h2>
-                    <div className="bg-indigo-600 rounded-[40px] p-8 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
-                        <div className="relative z-10">
-                            <BrainCircuit size={40} className="mb-6 opacity-80" />
-                            <h3 className="text-xl font-black mb-2 tracking-tight">Predição de Desgaste</h3>
-                            <p className="text-indigo-100 text-sm font-medium leading-relaxed">
-                                Com base nas últimas 50 inspeções, sua frota apresenta um rendimento médio de **18.200 KM por milímetro**.
-                            </p>
-                            <Link href="/dashboard/predictions" className="mt-8 inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-black text-sm hover:scale-105 transition-all">
-                                Ver Relatório Completo <ArrowUpRight size={16} />
-                            </Link>
+                {/* Simulação Térmica / IA Vision */}
+                <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col group cursor-pointer relative overflow-hidden">
+                    <header className="flex justify-between items-center mb-8">
+                        <h3 className="text-xl font-black text-gray-900 tracking-tight">Simulação Térmica (IA)</h3>
+                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <Camera size={20} />
                         </div>
-                        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all"></div>
+                    </header>
+
+                    <div className="flex-1 flex flex-col items-center justify-center gap-6 border-2 border-dashed border-gray-50 rounded-[32px] group-hover:bg-indigo-50/10 transition-all">
+                        <div className="w-16 h-24 bg-gray-50 flex items-center justify-center rounded-xl shadow-inner relative overflow-hidden">
+                            <Thermometer className="text-gray-200" size={40} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-orange-400/20 to-transparent"></div>
+                        </div>
+                        <p className="text-xs font-bold text-gray-300 uppercase tracking-widest text-center">Clique na câmera para gerar uma análise visual de desgaste simulada por IA.</p>
                     </div>
 
-                    <div className="bg-white rounded-[40px] p-8 border border-gray-50 shadow-sm">
-                        <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">Eficiência de Custo</h3>
-                        <div className="flex items-end gap-2">
-                            <span className="text-3xl font-black text-gray-900">R$ 0,08</span>
-                            <span className="text-gray-400 font-bold text-xs mb-1.5 uppercase tracking-tighter">/ KM Médio</span>
-                        </div>
-                        <div className="mt-4 flex items-center gap-2 text-emerald-500 font-black text-[10px] uppercase">
-                            <TrendingDown size={14} /> 4.2% menor que o mês passado
-                        </div>
+                    {/* Overlay de Bloqueio/Empty state estilizado */}
+                    <div className="absolute inset-x-10 bottom-10 top-24 bg-gradient-to-b from-white/0 via-white/80 to-white flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="font-black text-indigo-600 uppercase text-[10px] tracking-widest">Processador IA Pronto</p>
                     </div>
                 </div>
             </div>
@@ -147,58 +167,32 @@ export default function DashboardHomePage() {
     )
 }
 
-function KPICard({ title, value, icon, href, critical }: any) {
+function StatusCard({ title, value, subtitle, icon, color }: any) {
     return (
-        <Link href={href} className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-50 hover:shadow-xl hover:shadow-indigo-100/30 transition-all duration-500 group relative overflow-hidden">
-            <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all">
-                    {icon}
-                </div>
-                {critical && (
-                    <div className="w-3 h-3 bg-rose-500 rounded-full animate-ping"></div>
-                )}
-            </div>
-            <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{title}</p>
-                <p className="text-3xl font-black text-gray-900 tracking-tighter">{value}</p>
-            </div>
-        </Link>
-    )
-}
-
-function ActionButton({ title, description, icon, color, href }: any) {
-    return (
-        <Link href={href} className={`${color} p-8 rounded-[40px] text-white flex flex-col gap-6 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-gray-200/50 group`}>
-            <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center group-hover:rotate-6 transition-all">
+        <div className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-50 hover:shadow-xl hover:shadow-indigo-100/30 transition-all duration-500 group">
+            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all">
                 {icon}
             </div>
             <div>
-                <h3 className="text-xl font-black tracking-tight">{title}</h3>
-                <p className="text-white/60 text-sm font-medium">{description}</p>
+                <p className="text-3xl font-black text-gray-900 tracking-tighter mb-1">{value}</p>
+                <p className="text-xs font-black text-gray-600 tracking-tight mb-2">{title}</p>
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest leading-none">{subtitle}</p>
             </div>
-        </Link>
-    )
-}
-
-function ActivityItem({ icon, title, desc, time }: any) {
-    return (
-        <div className="flex items-center justify-between group">
-            <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center transition-all group-hover:scale-110">
-                    {icon}
-                </div>
-                <div>
-                    <p className="text-sm font-black text-gray-900">{title}</p>
-                    <p className="text-xs text-gray-400 font-medium">{desc}</p>
-                </div>
-            </div>
-            <span className="text-[10px] font-black text-gray-300 uppercase">{time}</span>
         </div>
     )
 }
 
-function Plus({ className }: any) {
+function TireNode({ status, label }: { status: 'ok' | 'warning' | 'critical', label?: string }) {
+    const colors = {
+        ok: 'bg-emerald-500 border-emerald-400 shadow-emerald-200/50',
+        warning: 'bg-amber-500 border-amber-400 shadow-amber-200/50',
+        critical: 'bg-rose-500 border-rose-400 shadow-rose-200/50'
+    }
+
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        <div className="flex flex-col items-center gap-2">
+            {label && <span className="text-[10px] font-black text-gray-300">{label}</span>}
+            <div className={`w-8 h-12 rounded-lg border-2 shadow-xl ${colors[status]} transition-transform hover:scale-110 cursor-pointer`}></div>
+        </div>
     )
 }
