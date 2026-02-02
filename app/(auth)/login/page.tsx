@@ -42,11 +42,12 @@ export default function LoginPage() {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-black/20 rounded-full blur-[100px] opacity-30"></div>
 
                 <div className="z-10 text-white max-w-lg">
-                    <div className="flex items-center gap-3 mb-12">
-                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-2xl">
-                            <span className="font-black text-2xl">p</span>
-                        </div>
-                        <h2 className="text-3xl font-black tracking-tight">pneu<span className="text-white/80">track</span></h2>
+                    <div className="mb-12">
+                        <img
+                            src="/brand/logo.png"
+                            alt="TRAX Logo"
+                            className="h-16 w-auto object-contain"
+                        />
                     </div>
 
                     <h1 className="text-6xl font-black mb-8 tracking-tighter leading-[1.1]">
@@ -75,11 +76,12 @@ export default function LoginPage() {
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24">
                 <div className="w-full max-w-md animate-in fade-in slide-in-from-right-8 duration-700">
                     <div className="mb-12">
-                        <div className="lg:hidden flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
-                                <span className="font-black text-xl">p</span>
-                            </div>
-                            <h1 className="text-xl font-black text-gray-900 tracking-tight">pneu<span className="text-indigo-600">track</span></h1>
+                        <div className="lg:hidden mb-8">
+                            <img
+                                src="/brand/logo.png"
+                                alt="TRAX Logo"
+                                className="h-10 w-auto object-contain"
+                            />
                         </div>
                         <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Login Administrativo</h2>
                         <p className="text-gray-400 font-bold text-lg">Insira suas credenciais para acessar o painel.</p>
@@ -144,7 +146,7 @@ export default function LoginPage() {
                     </form>
 
                     <div className="mt-20 pt-10 border-t border-gray-100 flex flex-col items-center lg:items-start gap-4">
-                        <p className="text-[10px] text-gray-300 font-black uppercase tracking-[0.3em]">Pneu Control v3.0 — Enterprise Fleet Solution</p>
+                        <p className="text-[10px] text-gray-300 font-black uppercase tracking-[0.3em]">TRAX Control v3.0 — Enterprise Fleet Solution</p>
                         <div className="flex gap-4">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>

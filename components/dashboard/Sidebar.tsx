@@ -46,11 +46,12 @@ export function Sidebar() {
 
     return (
         <aside className="w-72 h-screen bg-indigo-600 flex flex-col p-6 shadow-2xl overflow-y-auto no-scrollbar border-r border-white/5">
-            <div className="flex items-center gap-3 mb-10 px-2">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-lg">
-                    <span className="font-black text-xl">p</span>
-                </div>
-                <h1 className="text-xl font-black text-white tracking-tight">pneu<span className="text-white/80">track</span></h1>
+            <div className="mb-10 px-2 flex items-center">
+                <img
+                    src="/brand/logo.png"
+                    alt="TRAX Logo"
+                    className="h-10 w-auto object-contain"
+                />
             </div>
 
             <div className="space-y-10">

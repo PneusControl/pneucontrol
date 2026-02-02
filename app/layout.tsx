@@ -9,8 +9,11 @@ import { MobileProvider } from '../components/providers/MobileProvider'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata = {
-  title: 'Pneu Control',
-  description: 'Sistema avançado de gestão de frotas e controle de pneus'
+  title: 'TRAX Control',
+  description: 'Sistema avançado de gestão de frotas e controle de pneus',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

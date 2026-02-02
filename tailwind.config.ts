@@ -16,7 +16,7 @@ const config: Config = {
                     300: '#9fb3c8',
                     400: '#829ab1',
                     500: '#627d98',
-                    600: '#2A466D', // Primary Brand Blue
+                    600: '#142039', // TRAX Dark Blue Balance
                     700: '#1e3a5f',
                     800: '#132144',
                     900: '#060a1f',
