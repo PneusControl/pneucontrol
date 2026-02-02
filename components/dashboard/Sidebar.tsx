@@ -5,25 +5,43 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard, ClipboardList, Package, BrainCircuit,
-    Truck, Settings, LogOut, FileText, Bell, Search, ShieldCheck, Thermometer, AlertCircle
+    Truck, Settings, LogOut, FileText, Bell, Search, ShieldCheck,
+    Thermometer, AlertCircle, Users, Building2, Key, Cog
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 
 export function Sidebar() {
     const pathname = usePathname()
-    const { user, signOut } = useAuth()
+    const { user, signOut, isSystemAdmin, profile } = useAuth()
+
+    // Se for System Admin (Developer), tem acesso total sempre
+    const permissions = isSystemAdmin ?
+        ['dashboard', 'fleet', 'tires', 'reports', 'inspections', 'maintenance'] :
+        (profile?.permissions || [])
+
+    const role = isSystemAdmin ? 'admin' : (profile?.role || 'operator')
 
     const menuItems = [
-        { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-        { label: 'Frota Ativa', icon: Truck, href: '/dashboard/fleet' },
-        { label: 'Estoque', icon: Package, href: '/dashboard/tires' },
-        { label: 'Relatórios', icon: FileText, href: '/dashboard/reports' },
-    ]
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+        { id: 'fleet', label: 'Frota Ativa', icon: Truck, href: '/dashboard/fleet' },
+        { id: 'tires', label: 'Estoque', icon: Package, href: '/dashboard/tires' },
+        { id: 'reports', label: 'Relatórios', icon: FileText, href: '/dashboard/reports' },
+    ].filter(item => permissions.includes(item.id))
 
     const operationItems = [
-        { label: 'Inspeções', icon: ClipboardList, href: '/dashboard/inspections' },
-        { label: 'Manutenções', icon: Settings, href: '/dashboard/maintenance' },
-        { label: 'Ajustes', icon: Settings, href: '/dashboard/settings' },
+        { id: 'inspections', label: 'Inspeções', icon: ClipboardList, href: '/dashboard/inspections' },
+        { id: 'maintenance', label: 'Manutenções', icon: Settings, href: '/dashboard/maintenance' },
+    ].filter(item => permissions.includes(item.id))
+
+    const adminItems = [
+        { label: 'Funcionários', icon: Users, href: '/dashboard/admin/employees' },
+        { label: 'Gestão de Frota', icon: Cog, href: '/dashboard/admin/fleet' },
+    ]
+
+    const systemItems = [
+        { label: 'Dashboard Global', icon: LayoutDashboard, href: '/system/dashboard' },
+        { label: 'Empresas', icon: Building2, href: '/system/companies' },
+        { label: 'Secrets (API Keys)', icon: Key, href: '/system/secrets' },
     ]
 
     return (
@@ -72,6 +90,48 @@ export function Sidebar() {
                         })}
                     </nav>
                 </div>
+
+                {role === 'admin' && (
+                    <div>
+                        <p className="px-4 mb-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">Administrativo</p>
+                        <nav className="space-y-2">
+                            {adminItems.map((item) => {
+                                const isActive = pathname === item.href
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-semibold transition-all ${isActive ? 'bg-white/20 text-white shadow-inner' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                    >
+                                        <item.icon size={20} />
+                                        <span className="text-[15px] tracking-tight">{item.label}</span>
+                                    </Link>
+                                )
+                            })}
+                        </nav>
+                    </div>
+                )}
+
+                {isSystemAdmin && (
+                    <div>
+                        <p className="px-4 mb-4 text-[11px] font-black text-amber-400/80 uppercase tracking-[0.2em]">Gestão do Sistema</p>
+                        <nav className="space-y-2">
+                            {systemItems.map((item) => {
+                                const isActive = pathname === item.href
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-semibold transition-all ${isActive ? 'bg-amber-400/20 text-amber-400 shadow-inner border border-amber-400/20' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                    >
+                                        <item.icon size={20} />
+                                        <span className="text-[15px] tracking-tight">{item.label}</span>
+                                    </Link>
+                                )
+                            })}
+                        </nav>
+                    </div>
+                )}
             </div>
 
             <footer className="mt-auto pt-8">
@@ -80,8 +140,8 @@ export function Sidebar() {
                         {user?.user_metadata?.full_name?.substring(0, 2) || 'JG'}
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-sm font-bold text-white truncate">{user?.user_metadata?.full_name || 'Gestor'}</p>
-                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Admin</p>
+                        <p className="text-sm font-bold text-white truncate">{profile?.full_name || user?.user_metadata?.full_name || 'Gestor'}</p>
+                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">{isSystemAdmin ? 'Developer' : role}</p>
                     </div>
                     <button onClick={() => signOut?.()} className="text-white/40 hover:text-rose-400 transition-colors p-2">
                         <LogOut size={18} />
