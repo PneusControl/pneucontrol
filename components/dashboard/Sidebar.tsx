@@ -16,7 +16,7 @@ export function Sidebar() {
 
     // Se for System Admin (Developer), tem acesso total sempre
     const permissions = isSystemAdmin ?
-        ['dashboard', 'fleet', 'tires', 'reports', 'inspections', 'maintenance'] :
+        ['dashboard', 'fleet', 'tires', 'suppliers', 'invoices', 'reports', 'inspections', 'maintenance'] :
         (profile?.permissions || [])
 
     const role = isSystemAdmin ? 'admin' : (profile?.role || 'operator')
@@ -24,7 +24,9 @@ export function Sidebar() {
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
         { id: 'fleet', label: 'Frota Ativa', icon: Truck, href: '/dashboard/fleet' },
-        { id: 'tires', label: 'Estoque', icon: Package, href: '/dashboard/tires' },
+        { id: 'suppliers', label: 'Fornecedores', icon: Building2, href: '/dashboard/suppliers' },
+        { id: 'invoices', label: 'Entrada de NF', icon: FileText, href: '/dashboard/invoices' },
+        { id: 'tires', label: 'Estoque de Pneus', icon: Package, href: '/dashboard/tires' },
         { id: 'reports', label: 'Relatórios', icon: FileText, href: '/dashboard/reports' },
     ].filter(item => permissions.includes(item.id))
 
