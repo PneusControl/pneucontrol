@@ -2,7 +2,7 @@ import base64
 import httpx
 import json
 from typing import Dict, Any, List, Optional
-from backend.app.services.nfe.parser import NFeParser
+from app.services.nfe.parser import NFeParser
 import logging
 
 logger = logging.getLogger(__name__)
