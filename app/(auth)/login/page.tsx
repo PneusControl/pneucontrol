@@ -37,16 +37,16 @@ export default function LoginPage() {
         <div className="min-h-screen bg-[#F8F9FD] flex">
             {/* Lado Esquerdo - Hero Premium */}
             <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 relative overflow-hidden items-center justify-center p-20">
-                {/* Efeitos de Fundo Arredondados */}
-                <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-400 rounded-full blur-[120px] opacity-50"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-black/20 rounded-full blur-[100px] opacity-30"></div>
+                {/* Efeitos de Fundo Arredondados - Ajustados para harmonia com azul escuro */}
+                <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-500 rounded-full blur-[120px] opacity-20"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-black/40 rounded-full blur-[100px] opacity-30"></div>
 
                 <div className="z-10 text-white max-w-lg">
-                    <div className="mb-12">
+                    <div className="mb-14">
                         <img
                             src="/brand/logo.png"
                             alt="TRAX Logo"
-                            className="h-16 w-auto object-contain"
+                            className="h-28 w-auto object-contain"
                         />
                     </div>
 
@@ -76,11 +76,11 @@ export default function LoginPage() {
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24">
                 <div className="w-full max-w-md animate-in fade-in slide-in-from-right-8 duration-700">
                     <div className="mb-12">
-                        <div className="lg:hidden mb-8">
+                        <div className="lg:hidden mb-10">
                             <img
                                 src="/brand/logo.png"
                                 alt="TRAX Logo"
-                                className="h-10 w-auto object-contain"
+                                className="h-16 w-auto object-contain"
                             />
                         </div>
                         <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Login Administrativo</h2>
