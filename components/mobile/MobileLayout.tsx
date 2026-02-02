@@ -11,7 +11,7 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
     const navItems = [
         { label: 'Início', icon: LayoutDashboard, href: '/dashboard' },
         { label: 'Inspeção', icon: ClipboardList, href: '/dashboard/inspections/new' },
-        { label: 'Pneus', icon: Package, href: '/dashboard/inventory' },
+        { label: 'Pneus', icon: Package, href: '/dashboard/tires' },
         { label: 'Predição', icon: BrainCircuit, href: '/dashboard/predictions' },
     ]
 

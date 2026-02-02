@@ -2,13 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import { X, Upload, FileDown, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
-
-interface BulkImportModalProps {
-    isOpen: boolean
-    onClose: () => void
-    onSuccess: () => void
-    tenantId: string
-}
+import { API_BASE_URL } from '@/lib/api-config'
 
 export default function BulkImportModal({ isOpen, onClose, onSuccess, tenantId }: BulkImportModalProps) {
     const [file, setFile] = useState<File | null>(null)
@@ -47,7 +41,7 @@ export default function BulkImportModal({ isOpen, onClose, onSuccess, tenantId }
             const formData = new FormData()
             formData.append('file', file)
 
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+            const baseUrl = API_BASE_URL
             const response = await fetch(`${baseUrl}/api/v1/tires/bulk-import?tenant_id=${tenantId}`, {
                 method: 'POST',
                 body: formData
