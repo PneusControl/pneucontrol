@@ -1,10 +1,11 @@
-from celery import Celery
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 
 celery_app = Celery(
     "pneucontrol_tasks",
-    broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0",
-    backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
+    broker=settings.REDIS_URL,
+    backend=settings.REDIS_URL
 )
 
 celery_app.conf.update(
