@@ -10,16 +10,16 @@ const config: Config = {
         extend: {
             colors: {
                 indigo: {
-                    50: '#f5f3ff', // Lightest purple-ish
-                    100: '#ede9fe',
-                    200: '#ddd6fe',
-                    300: '#c4b5fd',
-                    400: '#a78bfa',
-                    500: '#8b5cf6',
-                    600: '#7c3aed', // Primary Brand Purple
-                    700: '#6d28d9',
-                    800: '#5b21b6',
-                    900: '#4c1d95',
+                    50: '#f0f4f8',
+                    100: '#d9e2ec',
+                    200: '#bcccdc',
+                    300: '#9fb3c8',
+                    400: '#829ab1',
+                    500: '#627d98',
+                    600: '#2A466D', // Primary Brand Blue
+                    700: '#1e3a5f',
+                    800: '#132144',
+                    900: '#060a1f',
                 },
                 background: '#F8F9FD',
             },

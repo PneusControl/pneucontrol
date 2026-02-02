@@ -42,7 +42,7 @@ export default function DashboardHomePage() {
                 <div className="flex items-center gap-6">
                     <button className="p-3 bg-white rounded-2xl text-gray-400 hover:text-indigo-600 shadow-sm border border-gray-50 transition-all relative">
                         <Bell size={24} />
-                        <span className="absolute top-3 right-3 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                        <span className="absolute top-3 right-3 w-2 h-2 bg-red-600 rounded-full border-2 border-white"></span>
                     </button>
                     <Link href="/dashboard/inspections/new" className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95">
                         <Plus size={20} /> Novo Registro
@@ -86,8 +86,8 @@ export default function DashboardHomePage() {
                     title="Trocas Urgentes"
                     value={stats?.urgent_replacements || '05'}
                     subtitle="Sulco < 1.6mm"
-                    icon={<AlertCircle className="text-rose-500" />}
-                    color="text-rose-500"
+                    icon={<AlertCircle className="text-red-600" />}
+                    color="text-red-600"
                 />
             </div>
 
@@ -100,7 +100,7 @@ export default function DashboardHomePage() {
                         <div className="flex gap-2">
                             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                             <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-red-600"></div>
                         </div>
                     </header>
 
@@ -186,7 +186,7 @@ function TireNode({ status, label }: { status: 'ok' | 'warning' | 'critical', la
     const colors = {
         ok: 'bg-emerald-500 border-emerald-400 shadow-emerald-200/50',
         warning: 'bg-amber-500 border-amber-400 shadow-amber-200/50',
-        critical: 'bg-rose-500 border-rose-400 shadow-rose-200/50'
+        critical: 'bg-red-600 border-red-500 shadow-red-200/50'
     }
 
     return (

@@ -87,7 +87,7 @@ export default function LoginPage() {
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         {error && (
-                            <div className="bg-rose-50 border border-rose-100 text-rose-600 px-6 py-4 rounded-[24px] text-sm font-black flex items-center gap-3 animate-shake">
+                            <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-[24px] text-sm font-black flex items-center gap-3 animate-shake">
                                 <AlertCircle size={20} />
                                 {error}
                             </div>
@@ -137,7 +137,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-indigo-600 text-white rounded-[24px] py-6 font-black text-lg shadow-2xl shadow-indigo-100 hover:bg-indigo-700 hover:shadow-indigo-200 flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 active:scale-95"
+                            className="w-full bg-indigo-600 text-white rounded-[24px] py-6 font-black text-lg shadow-2xl shadow-indigo-200/50 hover:bg-indigo-700 hover:shadow-indigo-300/50 flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 active:scale-95"
                         >
                             {loading ? 'Validando...' : 'Acessar Painel'} <ArrowRight size={24} />
                         </button>
