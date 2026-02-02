@@ -17,7 +17,10 @@ export default function DashboardHomePage() {
 
     useEffect(() => {
         const fetchStats = async () => {
-            if (!tenantId) return
+            if (!tenantId) {
+                setLoading(false)
+                return
+            }
             try {
                 const baseUrl = API_BASE_URL
                 const response = await fetch(`${baseUrl}/api/v1/dashboard/stats?tenant_id=${tenantId}`)

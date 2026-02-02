@@ -24,7 +24,10 @@ export default function MobileInventoryPage() {
 
     useEffect(() => {
         const loadTires = async () => {
-            if (!tenantId) return
+            if (!tenantId) {
+                setLoading(false)
+                return
+            }
             try {
                 // Tenta carregar do cache offline
                 const cached = await db.tires.where('tenant_id').equals(tenantId).toArray()

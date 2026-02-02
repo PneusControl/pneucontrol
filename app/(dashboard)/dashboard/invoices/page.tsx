@@ -27,7 +27,10 @@ export default function InvoicesHistoryPage() {
 
     useEffect(() => {
         const fetchInvoices = async () => {
-            if (!tenantId) return
+            if (!tenantId) {
+                setLoading(false)
+                return
+            }
             setLoading(true)
             try {
                 const baseUrl = API_BASE_URL

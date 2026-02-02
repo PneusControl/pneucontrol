@@ -25,7 +25,10 @@ export default function MobileVehiclesPage() {
 
     useEffect(() => {
         const loadVehicles = async () => {
-            if (!tenantId) return
+            if (!tenantId) {
+                setLoading(false)
+                return
+            }
             try {
                 // Tenta carregar do cache offline primeiro para velocidade
                 const cached = await db.vehicles.where('tenant_id').equals(tenantId).toArray()

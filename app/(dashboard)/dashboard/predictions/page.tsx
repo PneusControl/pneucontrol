@@ -21,7 +21,10 @@ export default function PredictionsDashboard() {
 
     useEffect(() => {
         const fetchRankings = async () => {
-            if (!tenantId) return
+            if (!tenantId) {
+                setLoading(false)
+                return
+            }
             try {
                 const baseUrl = API_BASE_URL
                 const response = await fetch(`${baseUrl}/api/v1/predictions/fleet/rankings?tenant_id=${tenantId}`)
