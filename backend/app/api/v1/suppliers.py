@@ -1,28 +1,34 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Optional
 from pydantic import BaseModel
-from app.core.config import settings
+from app.core.config import get_settings
 from supabase import Client, create_client
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+settings = get_settings()
 
 def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 # Schemas
 class SupplierCreate(BaseModel):
-    name: str
+    razao_social: str
     cnpj: str
     tenant_id: str
-    contact_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    nome_fantasia: Optional[str] = None
+    contato_nome: Optional[str] = None
+    contato_email: Optional[str] = None
+    contato_telefone: Optional[str] = None
+    status: Optional[str] = "ativo"
 
 class SupplierResponse(BaseModel):
     id: str
-    name: str
+    razao_social: str
     cnpj: str
     tenant_id: str
+    nome_fantasia: Optional[str] = None
     created_at: str
 
 @router.post("/suppliers", response_model=SupplierResponse, status_code=status.HTTP_201_CREATED)

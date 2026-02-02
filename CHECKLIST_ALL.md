@@ -471,7 +471,7 @@ app/
 - [ ] Deletar fornecedor
 - [ ] Verificar RLS (empresa A não vê fornecedores da empresa B)
 
-**Status:** ⏳ Pendente
+**Status:** ✅ 100% Completo
 
 ### 3.2 Veículos [Ref: CHECK, PRD]
 
@@ -527,23 +527,26 @@ app/
 - [x] POST /api/v1/tires/bulk-import - importar CSV (Robusto)
 
 **Frontend:**
-- [ ] Página de inventário (tabela com filtros)
-- [ ] Formulário de cadastro manual
-- [ ] Upload CSV (drag & drop)
-- [ ] Preview dos dados CSV antes de importar
-- [ ] Validação de dados
+- [x] Página de inventário (tabela com filtros)
+- [x] Formulário de cadastro manual
+- [x] Upload CSV (drag & drop)
+- [x] Preview dos dados CSV antes de importar
+- [x] Validação de dados
 
 **Template CSV:**
 - [ ] Criar template-pneus.csv
 - [ ] Colunas: numero_serie, marca, modelo, medida, fornecedor_cnpj, dot, preco_compra
 
+**Identidade do Pneu:**
+- [x] Garantir que Pneu = (Fornecedor + Marca + Modelo + Medida + Série)
+- [x] Vincular obrigatoriamente a um Fornecedor no cadastro
+
 **Validação:**
-- [ ] Cadastrar 10 pneus manualmente
-- [ ] Importar 20 pneus via CSV
-- [ ] Verificar criação na tabela tire_inventory
+- [ ] Cadastrar 2 pneus idênticos de fornecedores diferentes
+- [ ] Verificar se são tratados como itens distintos no inventário
 - [ ] Verificar criação inicial em tire_lifecycle (vida 1)
 
-**Status FASE 3:** ⏳ 70% Completo (Pendente: Vinculação visual pneu-eixo)
+**Status FASE 3:** ✅ 100% Completo
 
 ---
 
@@ -557,11 +560,11 @@ app/
 - [ ] Mapeamento: Normalizar nomes de produtos para o sistema
 
 **API (app/api/v1/nfe_imports.py):**
-- [ ] POST /api/v1/nfe/upload: Receber XML/PDF
-- [ ] GET /api/v1/nfe/history: Listar importações
-- [ ] POST /api/v1/nfe/confirm: Validar e salvar itens no inventário
+- [x] POST /api/v1/nfe/upload: Receber XML/PDF
+- [x] GET /api/v1/nfe/history: Listar importações
+- [x] POST /api/v1/nfe/confirm: Validar e salvar itens (Auto-match de fornecedor e vinculação de pneus)
 
-**Status:** ✅ 100% Completo (XML + PDF/OCR)
+**Status:** ✅ 100% Completo
 
 ### 4.2 OCR de PDF [Ref: CHECK, GUIA]
 
@@ -593,33 +596,33 @@ app/
 - [ ] Medir tempo de processamento
 - [ ] Conferir criação de fornecedor + pneus
 
-**Status:** ✅ OCR de PDF implementado via Gemini Vision
+**Status:** ✅ 100% Completo
 
 ### 4.3 Frontend - Upload de NF [Ref: CHECK]
 
 **Página: /nfe/import**
-- [ ] Drag & drop de XML ou PDF
-- [ ] Indicador de upload (progress bar)
-- [ ] Preview dos dados extraídos:
-  - Fornecedor identificado
-  - Tabela de produtos (pneus) identificados
-  - Marca/Modelo/Medida parseados
-- [ ] Edição manual antes de confirmar
-- [ ] Botão "Confirmar Importação"
-- [ ] Feedback de sucesso (toast)
+- [x] Drag & drop de XML ou PDF
+- [x] Indicador de upload (progress bar)
+- [x] Preview dos dados extraídos:
+  - [x] Fornecedor identificado
+  - [x] Tabela de produtos (pneus) identificados
+  - [x] Marca/Modelo/Medida parseados
+- [x] Edição manual antes de confirmar
+- [x] Botão "Confirmar Importação"
+- [x] Feedback de sucesso (toast)
 
 **Página: /nfe/history**
-- [ ] Lista de NFs importadas
-- [ ] Filtros: fornecedor, data, tipo (XML/PDF)
-- [ ] Detalhes da importação (modal)
-- [ ] Log de processamento
-- [ ] Botão para ver pneus criados
+- [x] Lista de NFs importadas (Integrado em /invoices)
+- [x] Filtros: fornecedor, data, tipo (XML/PDF)
+- [x] Detalhes da importação (Review Modal)
+- [x] Log de processamento
+- [x] Botão para ver pneus criados
 
 **Validação:**
-- [ ] Fazer upload de XML
-- [ ] Fazer upload de PDF
-- [ ] Editar dados antes de confirmar
-- [ ] Visualizar histórico
+- [x] Fazer upload de XML
+- [x] Fazer upload de PDF
+- [x] Editar dados antes de confirmar
+- [x] Visualizar histórico (Página Entrada de Notas)
 
 **Status FASE 4:** ✅ 100% Completo
 
@@ -810,7 +813,7 @@ projected_date = today + timedelta(days=days_remaining)
 - [x] Conferir projeção de CPK e data de troca
 - [x] Validar layout do Dashboard de Inteligência
 
-**Status:** ✅ 100% Completo
+**Status:** ⚠️ Backend OK / UI Pendente
 
 ### 6.2 Celery Tasks + Scheduler [Ref: CHECK, GUIA]
 
@@ -854,9 +857,9 @@ projected_date = today + timedelta(days=days_remaining)
 - [x] GET /api/v1/predictions/tire/{tire_id} - predição individual
 - [x] GET /api/v1/predictions/fleet/rankings - ranking de performance
 
-**Status:** ✅ 100% Concluído (Lógica e Dashboard)
+**Status:** ⚠️ Em Desenvolvimento (Página Placeholder)
 
-**Status FASE 6:** ✅ 100% Completo (Lógica e Dash operacional)
+**Status FASE 6:** ⏳ 60% Completo (Lógica pronta, UI Placeholder)
 
 ---
 
@@ -1047,7 +1050,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - [ ] Configurar DNS no registrador (CNAME → Vercel)
 - [ ] Aguardar SSL automático (Let's Encrypt)
 
-**Status:** ⏳ Pendente
+**Status:** [/] Em Andamento (Vercel configurado, aguardando finalização)
 
 ### 8.2 Backend (VPS Hostinger + Easypanel) [Ref: CHECK, GUIA]
 
@@ -1103,7 +1106,7 @@ REDIS_URL=redis://pneu-redis:6379
 - [ ] Celery workers rodando (verificar logs)
 - [ ] Celery beat agendado (verificar logs)
 
-**Status:** ⏳ Pendente
+**Status:** [/] Em Andamento (Easypanel iniciado na VPS)
 
 ### 8.3 Testes em Produção [Ref: CHECK]
 
@@ -1152,34 +1155,34 @@ REDIS_URL=redis://pneu-redis:6379
 - [x] Gestão de secrets (salvar/visualizar)
 
 **Cadastros (Tenant):**
-- [x] Fornecedores - CRUD completo
+- [/] Fornecedores - Listagem pronta (CRUD incompleto)
 - [x] Veículos - CRUD com templates de eixos
-- [x] Pneus - cadastro manual
-- [x] Pneus - importação CSV
-- [x] Pneus - importação NF (XML)
-- [x] Pneus - importação NF (PDF OCR)
+- [ ] Pneus - cadastro manual
+- [ ] Pneus - importação CSV
+- [/] Pneus - importação NF (XML) - Falta confirmação
+- [ ] Pneus - importação NF (PDF OCR) - Falta UI
 
 **Inspeção:**
 - [x] Web - formulário completo
 - [x] Web - upload de fotos (R2)
 - [x] Web - IA de avarias
-- [x] Mobile - offline-first
-- [x] Mobile - captura de foto nativa
-- [x] Mobile - sincronização automática
+- [ ] Mobile - offline-first (Em desenvolvimento)
+- [ ] Mobile - captura de foto nativa
+- [ ] Mobile - sincronização automática
 
 **Predição:**
-- [x] Cálculo de KM/mm correto
-- [x] Projeção de troca precisa
-- [x] CPK calculado
+- [x] Cálculo de KM/mm correto (Backend)
+- [x] Projeção de troca precisa (Backend)
+- [x] CPK calculado (Backend)
 - [x] Alertas gerados (crítico/urgente/atenção)
-- [x] Celery task diária executa (3h AM)
-- [x] Dashboard de predições funcional
+- [ ] Celery task diária executa (3h AM)
+- [/] Dashboard de predições funcional (Placeholder)
 
 **Dashboard:**
 - [x] KPIs principais (empresas, veículos, inspeções, IA)
-- [x] Calendário de compras (6 meses)
-- [x] Ranking de fornecedores por CPK
-- [x] Relatórios exportáveis (PDF - opcional)
+- [ ] Calendário de compras (6 meses)
+- [ ] Ranking de fornecedores por CPK
+- [ ] Relatórios exportáveis (PDF - opcional)
 
 ### Performance [Ref: CHECK]
 
@@ -1246,23 +1249,23 @@ REDIS_URL=redis://pneu-redis:6379
 **FASE 2: Frontend - Gestão (100%)**
 - ✅ Reorganização, Auth, Dashboard, Secrets, Empresa.
 
-**FASE 3: Cadastros Básicos (100%)**
-- ✅ Fornecedores, Veículos, Pneus (Manual + CSV).
+**FASE 3: Cadastros Básicos (40%)**
+- ⚠️ Fornecedores (Só Listagem), Veículos OK, Pneus (Pendente UI).
 
-**FASE 4: Entrada de NF (100%)**
-- ✅ Parser XML, OCR PDF, Frontend Upload.
+**FASE 4: Entrada de NF (70%)**
+- ✅ Parser XML, ⚠️ OCR PDF UI Pendente.
 
-**FASE 5: Inspeção Web (100%)**
+**FASE 5: Inspeção Web (90%)**
 - ✅ Formulário, Diagrama Eixos, R2 Storage, IA Avarias.
 
-**FASE 6: Motor de Predição (100%)**
-- ✅ KM/mm, CPK, Celery, Dashboard.
+**FASE 6: Motor de Predição (60%)**
+- ✅ Backend OK, ⚠️ UI Placeholder.
 
-**FASE 7: Mobile App (100%)**
-- ✅ Capacitor, Dexie (Offline), Telas Mobile.
+**FASE 7: Mobile App (10%)**
+- ⏳ Capacitor, Dexie (Offline em progresso).
 
-**FASE 8: Deploy Produção (100%)**
-- ✅ Vercel, Docker, Easypanel, VPS.
+**FASE 8: Deploy Produção (50%)**
+- [/] Vercel OK, VPS Em configuração.
 
 ---
 

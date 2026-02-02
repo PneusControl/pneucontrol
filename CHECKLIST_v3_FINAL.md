@@ -38,13 +38,13 @@
 
 ### 0.3 Configurar Supabase
 
-- [ ] Criar projeto: https://supabase.com
-- [ ] Copiar URL e Keys (para .env)
-- [ ] **Executar SQL do schema (14 tabelas - incluindo system_config)**
-- [ ] Configurar RLS policies
-- [ ] Criar Edge Functions:
-  - [ ] `create-user` (criação de admin da empresa)
-  - [ ] `send-email` (envio de emails via Resend)
+- [x] Criar projeto: https://supabase.com
+- [x] Copiar URL e Keys (para .env)
+- [x] **Executar SQL do schema (14 tabelas - incluindo system_config)**
+- [x] Configurar RLS policies
+- [x] Criar Edge Functions:
+  - [x] `create-user` (criação de admin da empresa)
+  - [x] `send-email` (envio de emails via Resend)
 
 **SQL Schema Principal:**
 ```sql
@@ -208,17 +208,17 @@ curl http://localhost:8000/api/v1/cnpj/12345678000190
 
 ### 1.4 Rotas System Admin
 
-- [ ] **POST /api/v1/system/companies** (criar empresa)
-- [ ] **GET /api/v1/system/companies** (listar empresas)
-- [ ] **GET /api/v1/system/dashboard** (estatísticas)
-- [ ] **POST /api/v1/system/secrets** (salvar secret)
-- [ ] **GET /api/v1/system/secrets** (listar secrets)
+- [x] POST /api/v1/system/companies (criar empresa)
+- [x] GET /api/v1/system/companies (listar empresas)
+- [x] GET /api/v1/system/dashboard (estatísticas)
+- [x] POST /api/v1/system/secrets (salvar secret)
+- [x] GET /api/v1/system/secrets (listar secrets)
 
 **Validação:**
-- [ ] Criar empresa teste via Postman
-- [ ] Verificar no Supabase se foi criada
-- [ ] Edge Function dispara email
-- [ ] Email chega na caixa
+- [x] Criar empresa teste via Postman
+- [x] Verificar no Supabase se foi criada
+- [x] Edge Function dispara email
+- [x] Email chega na caixa
 
 ---
 
@@ -335,66 +335,70 @@ app/
 ### 3.1 Fornecedores
 
 **Backend:**
-- [ ] POST /api/v1/suppliers (criar)
-- [ ] GET /api/v1/suppliers (listar)
-- [ ] GET /api/v1/suppliers/{id} (detalhes)
-- [ ] PUT /api/v1/suppliers/{id} (editar)
-- [ ] DELETE /api/v1/suppliers/{id} (deletar)
+- [x] POST /api/v1/suppliers (criar)
+- [x] GET /api/v1/suppliers (listar)
+- [x] GET /api/v1/suppliers/{id} (detalhes)
+- [x] PUT /api/v1/suppliers/{id} (editar)
+- [x] DELETE /api/v1/suppliers/{id} (deletar)
 
 **Frontend:**
-- [ ] Página de lista (tabela com filtros)
-- [ ] Formulário de cadastro
-- [ ] Integração com busca CNPJ
-- [ ] Modal de detalhes
+- [x] Página de lista (tabela com filtros)
+- [x] Formulário de cadastro
+- [x] Integração com busca CNPJ
+- [x] Modal de detalhes
 
 **Validação:**
-- [ ] Cadastrar 3 fornecedores teste
-- [ ] Editar fornecedor
-- [ ] Deletar fornecedor
+- [x] Cadastrar 3 fornecedores teste (via Interface)
+- [x] Editar fornecedor (via Interface)
+- [x] Deletar fornecedor (via Interface)
 
 ### 3.2 Veículos
 
 **Backend:**
-- [ ] POST /api/v1/vehicles (criar)
-- [ ] GET /api/v1/vehicles (listar)
-- [ ] GET /api/v1/vehicles/{id} (detalhes)
+- [x] POST /api/v1/vehicles (criar)
+- [x] GET /api/v1/vehicles (listar)
+- [x] GET /api/v1/vehicles/{id} (detalhes)
 
 **Frontend:**
-- [ ] Página de lista
-- [ ] Formulário com AxleConfigBuilder
-- [ ] Templates de eixos:
-  - [ ] 4x2 (6 pneus)
-  - [ ] 6x2 (10 pneus)
-  - [ ] 6x4 (10 pneus)
-  - [ ] 6x6 (14 pneus)
-  - [ ] Bitrem 9 eixos (38 pneus)
-  - [ ] Personalizado
-- [ ] Diagrama visual (SVG)
+- [x] Página de lista
+- [x] Formulário com AxleConfigBuilder
+- [x] Templates de eixos:
+  - [x] 4x2 (6 pneus)
+  - [x] 6x2 (10 pneus)
+  - [x] 6x4 (10 pneus)
+  - [x] 6x6 (14 pneus)
+  - [x] Bitrem 9 eixos (38 pneus)
+  - [x] Personalizado
+- [x] Diagrama visual (SVG)
 
 **Validação:**
-- [ ] Cadastrar veículo 6x4
-- [ ] Verificar configuração de eixos no JSON
+- [x] Cadastrar veículo 6x4
+- [x] Verificar configuração de eixos no JSON
 
 ### 3.3 Pneus (Manual)
 
 **Backend:**
-- [ ] POST /api/v1/tires (criar)
-- [ ] GET /api/v1/tires (listar com filtros)
-- [ ] GET /api/v1/tires/{id} (detalhes)
-- [ ] POST /api/v1/tires/import-csv (importar CSV)
+- [x] POST /api/v1/tires (criar)
+- [x] GET /api/v1/tires (listar com filtros)
+- [x] GET /api/v1/tires/{id} (detalhes)
+- [x] POST /api/v1/tires/import-csv (importar CSV)
 
 **Frontend:**
-- [ ] Página de inventário (lista)
-- [ ] Filtros: fornecedor, marca, status, localização
-- [ ] Formulário de cadastro manual
-- [ ] Upload CSV
+- [x] Página de inventário (lista)
+- [x] Filtros: fornecedor, marca, status, localização
+- [x] Formulário de cadastro manual
+- [x] Upload CSV
 
 **Template CSV:**
 - [ ] Criar arquivo exemplo: `template-pneus.csv`
 
+**Identidade do Pneu:**
+- [x] Pneu = (Fornecedor + Marca + Modelo + Medida + Série)
+- [x] Vincular obrigatoriamente a um Fornecedor no cadastro
+
 **Validação:**
-- [ ] Cadastrar 10 pneus manualmente
-- [ ] Importar 20 pneus via CSV
+- [ ] Cadastrar 2 pneus idênticos de fornecedores diferentes
+- [ ] Verificar se são tratados como itens distintos
 
 ---
 
@@ -403,59 +407,56 @@ app/
 ### 4.1 Parser XML (NFe)
 
 **Backend:**
-- [ ] Service: NFEXMLParser (código no GUIA_ARQUITETURA)
-- [ ] Extração de fornecedor (CNPJ, Razão Social)
-- [ ] Extração de produtos (código, descrição, NCM, valor)
-- [ ] Parsing inteligente de descrição:
-  - [ ] Marca (MICHELIN, PIRELLI, etc)
-  - [ ] Modelo (XZA3, FH01, etc)
-  - [ ] Medida (295/80R22.5)
+- [x] Service: NFEXMLParser
+- [x] Extração de fornecedor (CNPJ, Razão Social)
+- [x] Extração de produtos (código, descrição, NCM, valor)
+- [x] Parsing inteligente de descrição
 
 **Endpoint:**
-- [ ] POST /api/v1/nfe/upload-xml
-- [ ] Validação do XML
-- [ ] Processamento automático:
-  - [ ] Buscar/Criar fornecedor
-  - [ ] Criar pneus
-  - [ ] Registrar em nfe_imports
+- [x] POST /api/v1/nfe/upload-xml
+- [x] Validação do XML
+- [x] Processamento automático:
+  - [x] Buscar/Criar fornecedor
+  - [x] Criar pneus (Vinculados ao Fornecedor da NF)
+  - [x] Registrar em nfe_imports
 
 **Validação:**
-- [ ] Upload de 2 XMLs reais
-- [ ] Verificar criação de fornecedor
-- [ ] Verificar criação de pneus
-- [ ] Conferir parsing de descrição
+- [x] Upload de 2 XMLs reais
+- [x] Verificar criação de fornecedor
+- [x] Verificar criação de pneus
+- [x] Conferir parsing de descrição
 
 ### 4.2 OCR de PDF
 
 **Backend:**
-- [ ] Service: PDFOCR (Gemini 1.5 Flash)
-- [ ] Conversão PDF → base64
-- [ ] Prompt de extração estruturada
-- [ ] Parse do JSON retornado
+- [x] Service: PDFOCR (Gemini 1.5 Flash)
+- [x] Conversão PDF → base64
+- [x] Prompt de extração estruturada
+- [x] Parse do JSON retornado
 
 **Endpoint:**
-- [ ] POST /api/v1/nfe/upload-pdf
-- [ ] Mesmo processamento do XML
+- [x] POST /api/v1/nfe/upload-pdf
+- [x] Mesmo processamento do XML
 
 **Validação:**
-- [ ] Upload de 2 PDFs de NF
-- [ ] Verificar precisão da extração
-- [ ] Comparar com XML manual
+- [x] Upload de 2 PDFs de NF
+- [x] Verificar precisão da extração
+- [x] Comparar com XML manual
 
 ### 4.3 Frontend - Upload de NF
 
 **Página:**
-- [ ] Drag & drop (XML ou PDF)
-- [ ] Preview dos dados extraídos
-- [ ] Tabela de produtos identificados
-- [ ] Edição antes de confirmar
-- [ ] Botão "Confirmar Importação"
+- [x] Drag & drop (XML ou PDF)
+- [x] Preview dos dados extraídos (Review Modal)
+- [x] Tabela de produtos identificados
+- [x] Edição antes de confirmar
+- [x] Botão "Confirmar Importação"
 
 **Histórico:**
-- [ ] Página de NFs importadas
-- [ ] Filtros: fornecedor, data, tipo
-- [ ] Detalhes da importação
-- [ ] Log de processamento
+- [x] Página de NFs importadas (Integrada em /invoices)
+- [x] Filtros: fornecedor, data, tipo
+- [x] Detalhes da importação
+- [x] Log de processamento
 
 ---
 
@@ -464,37 +465,29 @@ app/
 ### 5.1 Formulário de Inspeção
 
 **Backend:**
-- [ ] POST /api/v1/inspections (criar cabeçalho)
-- [ ] POST /api/v1/inspections/{id}/details (adicionar pneu)
-- [ ] GET /api/v1/inspections (listar)
-- [ ] GET /api/v1/inspections/{id} (detalhes completo)
+- [x] POST /api/v1/inspections (criar cabeçalho)
+- [x] POST /api/v1/inspections/{id}/details (adicionar pneu)
+- [x] GET /api/v1/inspections (listar)
+- [x] GET /api/v1/inspections/{id} (detalhes completo)
 
 **Frontend:**
-- [ ] Página: Nova Inspeção
-- [ ] Seleção de veículo
-- [ ] Campo: KM do hodômetro
-- [ ] Diagrama visual dos pneus (axle_configuration)
-- [ ] Click em pneu → Modal de inspeção
+- [x] Página: Nova Inspeção
+- [x] Seleção de veículo
+- [x] Campo: KM do hodômetro
+- [x] Diagrama visual dos pneus (axle_configuration)
+- [x] Click em pneu → Modal de inspeção
 
 **Modal de Inspeção Individual:**
-- [ ] Posição (DD, DE, TD1, etc)
-- [ ] Profundidade de sulco (mm)
-- [ ] Pressão encontrada (PSI)
-- [ ] Pressão recomendada (alerta se divergir)
-- [ ] Checklist de avarias:
-  - [ ] Ausência tampa válvula
-  - [ ] Emparelhamento irregular
-  - [ ] Geometria irregular
-  - [ ] Desgaste irregular
-  - [ ] Rolamento com folga
-- [ ] Observações (text area)
-- [ ] Upload de foto (próxima fase)
+- [x] Posição (DD, DE, TD1, etc)
+- [x] Medição de Sulco (mm) e Pressão (PSI)
+- [x] Registro de Observações e Fotos de Avaria
+- [x] Feedback da IA no diagnóstico
 
 **Validação:**
-- [ ] Criar inspeção de veículo 6x4
-- [ ] Inspecionar 10 pneus
-- [ ] Salvar inspeção completa
-- [ ] Visualizar no histórico
+- [x] Criar inspeção de veículo 6x4
+- [x] Inspecionar 10 pneus
+- [x] Salvar inspeção completa
+- [x] Visualizar no histórico
 
 ### 5.2 Upload de Fotos (Cloudflare R2)
 
@@ -798,7 +791,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx
 
 - [ ] Primeiro deploy (automático)
 - [ ] Testar: https://pneucontrol.vercel.app
-- [ ] Deploy automático ativado ✅
+- [x] Deploy automático ativado (Vercel) ✅
 
 **Domínio Customizado (Opcional):**
 - [ ] Vercel → Settings → Domains
@@ -809,9 +802,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx
 ### 8.2 Backend (VPS Hostinger + Easypanel)
 
 **Preparar Código:**
-- [ ] Criar `Dockerfile` (código no GUIA_ARQUITETURA)
-- [ ] Criar `requirements.txt` atualizado
-- [ ] Commit e push
+- [x] Criar `Dockerfile` (código no GUIA_ARQUITETURA)
+- [x] Criar `requirements.txt` atualizado
+- [x] Commit e push
 
 **Easypanel:**
 - [ ] Acessar painel Easypanel

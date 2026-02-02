@@ -1,37 +1,42 @@
 from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File
 from typing import List, Optional
 from pydantic import BaseModel
-from app.core.config import settings
+from app.core.config import get_settings
 from supabase import Client, create_client
 from app.services.fleet.bulk_import import BulkImportService
-import io
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+settings = get_settings()
 
 def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 # Schemas
 class TireCreate(BaseModel):
-    serial_number: str
-    brand: str
-    model: str
-    size: str
+    numero_serie: str
+    marca: str
+    modelo: str
+    medida: str
     tenant_id: str
-    status: Optional[str] = "stock" # stock, mounted, scrap, retreading
-    initial_tread: Optional[float] = 0
-    current_tread: Optional[float] = 0
+    supplier_id: Optional[str] = None
+    status: Optional[str] = "estoque" 
+    sulco_inicial: Optional[float] = 20.0
+    sulco_atual: Optional[float] = 20.0
     dot: Optional[str] = None
+    valor_compra: Optional[float] = 0.0
+    numero_fogo: Optional[str] = None
 
 class TireResponse(BaseModel):
     id: str
-    serial_number: str
-    brand: str
-    model: str
-    size: str
+    numero_serie: str
+    marca: str
+    modelo: str
+    medida: str
     tenant_id: str
     status: str
-    current_tread: Optional[float]
+    sulco_atual: Optional[float]
     created_at: str
 
 @router.post("/tires", response_model=TireResponse, status_code=status.HTTP_201_CREATED)
@@ -41,7 +46,7 @@ async def create_tire(tire: TireCreate, supabase: Client = Depends(get_supabase)
     existing = supabase.table("tire_inventory") \
         .select("id") \
         .eq("tenant_id", tire.tenant_id) \
-        .eq("serial_number", tire.serial_number.upper()) \
+        .eq("numero_serie", tire.numero_serie.upper()) \
         .execute()
     
     if existing.data:
@@ -49,7 +54,7 @@ async def create_tire(tire: TireCreate, supabase: Client = Depends(get_supabase)
 
     # 2. Inserir
     tire_data = tire.model_dump()
-    tire_data["serial_number"] = tire.serial_number.upper()
+    tire_data["numero_serie"] = tire.numero_serie.upper()
     
     result = supabase.table("tire_inventory").insert(tire_data).execute()
     if not result.data:

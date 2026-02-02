@@ -30,11 +30,33 @@ class NFeService:
 
     def process_xml(self, xml_content: str) -> Dict[str, Any]:
         """
-        Processa XML utilizando o NFeParser nativo.
+        Processa XML utilizando o NFeParser nativo e normaliza as chaves.
         """
         parser = NFeParser(xml_content)
-        data = parser.parse()
-        data["source"] = "xml"
+        raw_data = parser.parse()
+        
+        # Normalizar chaves para consistencia com OCR e Backend
+        data = {
+            "nfe_number": raw_data["nfe_number"],
+            "series": raw_data["series"],
+            "issue_date": raw_data["issue_date"][:10], # Pega apenas YYYY-MM-DD
+            "total_amount": raw_data["total_value"],
+            "supplier": raw_data["issuer"], # NFeParser usa 'issuer'
+            "items": [],
+            "source": "xml"
+        }
+        
+        for item in raw_data["items"]:
+            data["items"].append({
+                "description": item["description"],
+                "quantity": item["qty"],
+                "unit_price": item["unit_price"],
+                "brand": "N/D", # XML nem sempre tem marca/modelo explicito por item
+                "model": "N/D",
+                "size": "N/D",
+                "serial_number": item.get("serial_number")
+            })
+            
         return data
 
     async def process_pdf_ocr(self, pdf_content: bytes) -> Dict[str, Any]:
@@ -45,7 +67,7 @@ class NFeService:
             raise ValueError("Chave do OpenRouter nao configurada para OCR.")
 
         # Converter PDF para base64
-        encoded_pdf = base64.b64encode(pdf_content).decode('base-content')
+        encoded_pdf = base64.b64encode(pdf_content).decode('utf-8')
 
         prompt = """
         Extraia os dados desta Nota Fiscal (DANFE) e retorne EXATAMENTE um JSON no seguinte formato:
@@ -53,34 +75,40 @@ class NFeService:
             "nfe_number": "numero da nota",
             "series": "serie",
             "issue_date": "YYYY-MM-DD",
-            "issuer": {
-                "cnpj": "CNPJ sem pontos",
-                "name": "Nome da empresa"
+            "total_amount": 0.0,
+            "supplier": {
+                "cnpj": "CNPJ apenas numeros",
+                "name": "Razao Social / Nome Fantasia",
+                "email": "email se houver",
+                "phone": "telefone se houver"
             },
-            "total_value": 0.0,
             "items": [
                 {
-                    "sku": "codigo",
                     "description": "descricao completa do pneu",
-                    "qty": 1,
+                    "quantity": 1,
                     "unit_price": 0.0,
-                    "ncm": "ncm"
+                    "brand": "Marca (ex: Michelin, Bridgestone)",
+                    "model": "Modelo (ex: XZA, R268)",
+                    "size": "Medida (ex: 295/80R22.5)"
                 }
             ]
         }
         
-        Importante: Foque apenas nos itens que sao PNEUS. Ignore fretes ou taxas.
+        Importante: 
+        1. Foque apenas nos itens que sao PNEUS. Ignore fretes ou taxas.
+        2. Certifique-se de que o CNPJ contenha apenas numeros.
+        3. Tente deduzir Marca, Modelo e Medida a partir da descricao se nao houver campos especificos.
         """
 
         headers = {
             "Authorization": f"Bearer {self.openrouter_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://pneucontrol.com.br", # Requisito OpenRouter
+            "HTTP-Referer": "https://pneucontrol.com.br",
             "X-Title": "Pneu Control AI"
         }
 
         payload = {
-            "model": "google/gemini-1.5-flash",
+            "model": "google/gemini-pro-vision", # Usando modelo vision adequado
             "messages": [
                 {
                     "role": "user",
@@ -106,11 +134,19 @@ class NFeService:
                     raise Exception(f"Falha na comunicacao com IA (Status {response.status_code})")
 
                 result = response.json()
-                content = result["choices"][0]["message"]["content"]
+                content_str = result["choices"][0]["message"]["content"]
                 
-                # Caso a IA retorne como string markdown
-                if isinstance(content, str):
-                    content = json.loads(content.replace('```json', '').replace('```', ''))
+                # Parsing resiliente
+                try:
+                    content = json.loads(content_str)
+                except:
+                    # Tentar limpar markdown se houver
+                    import re
+                    json_match = re.search(r'\{.*\}', content_str, re.DOTALL)
+                    if json_match:
+                        content = json.loads(json_match.group())
+                    else:
+                        raise ValueError("IA nao retornou um JSON valido")
                 
                 content["source"] = "pdf_ocr"
                 return content

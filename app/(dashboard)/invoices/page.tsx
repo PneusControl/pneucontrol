@@ -2,16 +2,18 @@
 import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
-import { FileText, Upload, CheckCircle2, AlertCircle, Loader2, Download, Search, Eye } from 'lucide-react'
+import { FileText, Upload, Calendar, Search, Filter, Loader2, ArrowRight, Check, X, Building2, Package, AlertCircle, Trash2 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 
 interface Invoice {
     id: string
-    nfe_number: string
-    issuer_name: string
+    invoice_number: string
+    supplier_name: string
+    total_amount: number
     issue_date: string
-    total_value: number
     status: string
+    items_count: number
+    created_at: string
 }
 
 export default function InvoicesPage() {
@@ -19,17 +21,22 @@ export default function InvoicesPage() {
     const [loading, setLoading] = useState(true)
     const [uploading, setUploading] = useState(false)
     const [search, setSearch] = useState('')
+
+    // Import Review State
+    const [showReview, setShowReview] = useState(false)
+    const [reviewData, setReviewData] = useState<any>(null)
+    const [saving, setSaving] = useState(false)
+
     const { user } = useAuth()
+    const tenantId = user?.user_metadata?.tenant_id
 
     useEffect(() => {
-        if (user?.user_metadata?.tenant_id) {
-            fetchInvoices()
-        }
-    }, [user])
+        if (tenantId) fetchInvoices()
+    }, [tenantId])
 
     const fetchInvoices = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/v1/invoices?tenant_id=${user.user_metadata.tenant_id}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/nfe/history?tenant_id=${tenantId}`)
             const data = await response.json()
             setInvoices(data)
         } catch (err) {
@@ -48,37 +55,73 @@ export default function InvoicesPage() {
         formData.append('file', file)
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/v1/invoices/upload-xml?tenant_id=${user.user_metadata.tenant_id}`, {
+            // Determine endpoint based on extension
+            const endpoint = file.name.endsWith('.pdf') ? 'upload-pdf' : 'upload-xml'
+            const response = await fetch(`${API_BASE_URL}/api/v1/nfe/${endpoint}?tenant_id=${tenantId}`, {
                 method: 'POST',
                 body: formData
             })
 
             if (response.ok) {
-                alert('Nota Fiscal processada com sucesso!')
-                fetchInvoices()
+                const data = await response.json()
+                setReviewData(data)
+                setShowReview(true)
             } else {
-                alert('Erro ao processar Nota Fiscal.')
+                alert('Erro ao processar arquivo.')
             }
         } catch (err) {
-            alert('Erro na conexão com o servidor.')
+            console.error('Erro no upload:', err)
         } finally {
             setUploading(false)
         }
     }
 
-    if (loading) return <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>
+    const handleConfirmImport = async () => {
+        setSaving(true)
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/v1/nfe/confirm?tenant_id=${tenantId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reviewData)
+            })
+
+            if (response.ok) {
+                setShowReview(false)
+                setReviewData(null)
+                fetchInvoices()
+            } else {
+                alert('Erro ao confirmar importação.')
+            }
+        } catch (err) {
+            console.error('Erro ao confirmar:', err)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const filteredInvoices = invoices.filter(i =>
+        i.supplier_name?.toLowerCase().includes(search.toLowerCase()) ||
+        i.invoice_number?.includes(search)
+    )
+
+    if (loading) return (
+        <div className="p-10 flex flex-col items-center justify-center min-h-[60vh]">
+            <Loader2 className="animate-spin text-indigo-600 mb-4" size={40} />
+            <p className="text-gray-400 font-medium animate-pulse">Carregando histórico de notas...</p>
+        </div>
+    )
 
     return (
-        <div className="p-10">
-            <header className="flex justify-between items-center mb-10">
+        <div className="p-10 max-w-7xl mx-auto">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Notas Fiscais</h1>
-                    <p className="text-gray-400 text-sm font-medium">Entrada automatizada de estoque via XML de NFe</p>
+                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Entrada de Notas</h1>
+                    <p className="text-gray-500 text-sm mt-1 font-medium">Processamento inteligente de XML e PDF (OCR)</p>
                 </div>
-                <div className="relative">
+                <div className="flex gap-3">
                     <input
                         type="file"
-                        accept=".xml"
+                        accept=".xml,.pdf"
                         onChange={handleFileUpload}
                         className="hidden"
                         id="nfe-upload"
@@ -86,73 +129,78 @@ export default function InvoicesPage() {
                     />
                     <label
                         htmlFor="nfe-upload"
-                        className={`flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all font-bold cursor-pointer ${uploading ? 'opacity-50' : ''}`}
+                        className={`flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-[20px] shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all font-bold cursor-pointer active:scale-95 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {uploading ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
-                        Importar XML de NFe
+                        Importar XML ou PDF
                     </label>
                 </div>
             </header>
 
-            {/* Grid de Historico */}
-            <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50">
-                <div className="p-6 border-b border-gray-50 flex gap-4">
-                    <div className="relative flex-1 group">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                            <Search size={18} />
-                        </div>
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-gray-50/50 border border-gray-50 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-indigo-500 transition-all"
-                            placeholder="Buscar por número da nota ou emitente..."
-                        />
+            {/* Filters & Search */}
+            <div className="flex gap-4 mb-10">
+                <div className="relative flex-1 group">
+                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-indigo-600 transition-colors">
+                        <Search size={20} />
                     </div>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full bg-white border border-gray-100 rounded-[24px] py-5 pl-14 pr-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm transition-all placeholder:text-gray-300 font-medium"
+                        placeholder="Buscar por número da nota ou fornecedor..."
+                    />
                 </div>
+                <button className="px-8 bg-white border border-gray-100 rounded-[24px] flex items-center gap-3 text-gray-600 font-bold hover:bg-gray-50 transition-all shadow-sm">
+                    <Filter size={18} className="text-indigo-500" /> Filtros Avançados
+                </button>
+            </div>
 
+            {/* Invoices Table */}
+            <div className="bg-white rounded-[40px] overflow-hidden shadow-xl shadow-gray-100/50 border border-gray-50">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-50/50">
-                            <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Número / Série</th>
-                            <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Emitente</th>
-                            <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Data Emissão</th>
-                            <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valor Total</th>
-                            <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                            <th className="px-8 py-4"></th>
+                        <tr className="bg-gray-50/50 border-b border-gray-50">
+                            <th className="px-10 py-6 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Nota / Fornecedor</th>
+                            <th className="px-10 py-6 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">Itens</th>
+                            <th className="px-10 py-6 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">Valor Total</th>
+                            <th className="px-10 py-6 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">Data Emissão</th>
+                            <th className="px-10 py-6"></th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {invoices.map((invoice) => (
-                            <tr key={invoice.id} className="hover:bg-gray-50/30 transition-colors group">
-                                <td className="px-8 py-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                                            <FileText size={20} />
+                    <tbody className="divide-y divide-gray-50/50 text-gray-700">
+                        {filteredInvoices.map((invoice) => (
+                            <tr key={invoice.id} className="hover:bg-indigo-50/20 transition-all group">
+                                <td className="px-10 py-8">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner group-hover:scale-110 transition-transform">
+                                            <FileText size={24} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-800">{invoice.nfe_number}</p>
-                                            <p className="text-xs text-gray-400 font-medium">Série {invoice.series}</p>
+                                            <p className="text-base font-bold text-gray-800 leading-tight mb-1">NF-e #{invoice.invoice_number}</p>
+                                            <p className="text-xs text-indigo-600 font-black tracking-wider uppercase">{invoice.supplier_name}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-8 py-6 text-xs font-bold text-gray-600">
-                                    {invoice.issuer_name}
-                                </td>
-                                <td className="px-8 py-6 text-xs text-gray-500 font-medium">
-                                    {new Date(invoice.issue_date).toLocaleDateString()}
-                                </td>
-                                <td className="px-8 py-6 text-sm font-bold text-indigo-600">
-                                    R$ {invoice.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </td>
-                                <td className="px-8 py-6">
-                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                                        {invoice.status}
+                                <td className="px-10 py-8 text-center">
+                                    <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-bold text-gray-600">
+                                        {invoice.items_count} pneus
                                     </span>
                                 </td>
-                                <td className="px-8 py-6 text-right">
-                                    <button className="p-2 text-gray-300 hover:text-indigo-600 transition-colors">
-                                        <Eye size={18} />
+                                <td className="px-10 py-8 text-center">
+                                    <span className="text-sm font-black text-gray-900">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(invoice.total_amount)}
+                                    </span>
+                                </td>
+                                <td className="px-10 py-8 text-center">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-xs font-bold text-gray-500">{new Date(invoice.issue_date).toLocaleDateString()}</span>
+                                        <span className="text-[10px] font-medium text-gray-300">Há {Math.floor((Date.now() - new Date(invoice.issue_date).getTime()) / (1000 * 60 * 60 * 24))} dias</span>
+                                    </div>
+                                </td>
+                                <td className="px-10 py-8 text-right">
+                                    <button className="p-3 text-gray-300 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm opacity-0 group-hover:opacity-100">
+                                        <ArrowRight size={20} />
                                     </button>
                                 </td>
                             </tr>
