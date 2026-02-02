@@ -11,7 +11,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 
 export function Sidebar() {
     const pathname = usePathname()
-    const { signOut } = useAuth()
+    const { user, signOut } = useAuth()
 
     const menuItems = [
         { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
