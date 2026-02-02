@@ -26,9 +26,13 @@ class Settings(BaseSettings):
     APP_VERSION: str = "3.0.0"
     DEBUG: bool = False
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    from pydantic_settings import SettingsConfigDict
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"
+    )
 
 
 @lru_cache()
