@@ -4,7 +4,7 @@ Carrega variaveis de ambiente do .env (apenas Supabase + ENCRYPTION_KEY + REDIS_
 Secrets externos (API keys) ficam no banco via SecretsManager.
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
@@ -25,8 +25,6 @@ class Settings(BaseSettings):
     APP_NAME: str = "Pneu Control API"
     APP_VERSION: str = "3.0.0"
     DEBUG: bool = False
-
-    from pydantic_settings import SettingsConfigDict
 
     model_config = SettingsConfigDict(
         env_file=".env",
