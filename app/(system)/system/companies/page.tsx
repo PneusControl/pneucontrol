@@ -2,7 +2,7 @@
 import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Building2, Search, Loader2, MoreVertical, ExternalLink } from 'lucide-react'
+import { Plus, Building2, Search, Loader2, Trash2, Mail, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface Company {
