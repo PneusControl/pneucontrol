@@ -1,18 +1,17 @@
-
 const getBaseUrl = () => {
-    // 1. Tenta pegar da variável de ambiente (setada no build ou runtime server-side)
-    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    // 1. Tenta pegar da variável de ambiente (Browser ou Server)
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.startsWith('http')) return envUrl;
 
     // 2. Se estiver no navegador, tenta inferir pelo domínio
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
 
-        // Se estiver nos domínios conhecidos de produção
-        if (hostname.includes('trax.app.br')) {
-            return 'https://api.31.97.241.105.sslip.io'; // Fallback seguro para o IP da API
-        }
-        if (hostname.includes('31.97.241.105')) {
-            return `https://api.${hostname}`;
+        // Se estiver em produção (Vercel ou Domínio Próprio)
+        if (hostname.includes('vercel.app') ||
+            hostname.includes('trax.app.br') ||
+            hostname.includes('31.97.241.105')) {
+            return 'https://api.31.97.241.105.sslip.io';
         }
     }
 
@@ -21,4 +20,11 @@ const getBaseUrl = () => {
 };
 
 export const API_BASE_URL = getBaseUrl();
-console.log('Using API Base URL:', API_BASE_URL);
+
+if (typeof window !== 'undefined') {
+    console.log('🚀 API Config:', {
+        hostname: window.location.hostname,
+        apiUrl: API_BASE_URL,
+        envUrl: process.env.NEXT_PUBLIC_API_URL
+    });
+}

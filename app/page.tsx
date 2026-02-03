@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+// Force redeploy for production sync
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
 import { Loader2 } from 'lucide-react'

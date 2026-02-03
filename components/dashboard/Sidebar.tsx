@@ -12,14 +12,15 @@ import { useAuth } from '@/components/providers/AuthProvider'
 
 export function Sidebar() {
     const pathname = usePathname()
-    const { user, signOut, isSystemAdmin, profile } = useAuth()
+    const { user, signOut, isSystemAdmin, profile, loading } = useAuth()
+    const role = isSystemAdmin ? 'admin' : (profile?.role || 'operator')
 
-    // Se for System Admin (Developer), tem acesso total sempre
-    const permissions = isSystemAdmin ?
-        ['dashboard', 'fleet', 'tires', 'suppliers', 'invoices', 'reports', 'inspections', 'maintenance'] :
+    // Se for System Admin (Developer) ou Admin da Empresa, tem acesso total aos módulos core
+    const permissions = (isSystemAdmin || role === 'admin') ?
+        ['dashboard', 'fleet', 'tires', 'suppliers', 'invoices', 'reports', 'inspections', 'maintenance', 'predictions'] :
         (profile?.permissions || [])
 
-    const role = isSystemAdmin ? 'admin' : (profile?.role || 'operator')
+    if (loading) return null;
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
