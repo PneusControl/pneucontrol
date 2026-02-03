@@ -127,10 +127,16 @@ export default function CompaniesPage() {
                                                 <Mail size={20} />
                                             </button>
                                             <button
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     if (confirm('Tem certeza que deseja excluir esta empresa definitivamente? Todos os dados vinculados (veículos, pneus, inspeções) serão apagados.')) {
-                                                        fetch(`${API_BASE_URL}/api/v1/system/companies/${company.id}`, { method: 'DELETE' })
-                                                            .then(() => setCompanies(prev => prev.filter(c => c.id !== company.id)))
+                                                        const res = await fetch(`${API_BASE_URL}/api/v1/system/companies/${company.id}`, { method: 'DELETE' })
+                                                        if (res.ok) {
+                                                            setCompanies(prev => prev.filter(c => c.id !== company.id))
+                                                            alert('Empresa excluída com sucesso.')
+                                                        } else {
+                                                            const err = await res.json()
+                                                            alert(`Erro ao excluir: ${err.detail || 'Erro desconhecido'}`)
+                                                        }
                                                     }
                                                 }}
                                                 className="p-2 text-gray-300 hover:text-rose-600 transition-colors"

@@ -107,10 +107,16 @@ export default function EditCompanyPage() {
                         {resendingEmail ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />} {resendingEmail ? 'Enviando...' : 'Reenviar Convite'}
                     </button>
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             if (confirm('EXCLUSÃO DEFINITIVA: Deseja apagar todos os dados desta empresa?')) {
-                                fetch(`${API_BASE_URL}/api/v1/system/companies/${id}`, { method: 'DELETE' })
-                                    .then(() => router.push('/system/companies'))
+                                const res = await fetch(`${API_BASE_URL}/api/v1/system/companies/${id}`, { method: 'DELETE' })
+                                if (res.ok) {
+                                    alert('Empresa excluída com sucesso.')
+                                    router.push('/system/companies')
+                                } else {
+                                    const err = await res.json()
+                                    alert(`Erro ao excluir: ${err.detail || 'Erro desconhecido'}`)
+                                }
                             }
                         }}
                         className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all flex items-center gap-2 font-bold"

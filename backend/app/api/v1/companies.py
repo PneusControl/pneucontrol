@@ -192,9 +192,15 @@ async def delete_company(company_id: str, supabase: Client = Depends(get_supabas
     # Nota: A remocao do auth.users deve ser feita via Admin API ou Edge Function
     # Como as tabelas tem ON DELETE CASCADE, deletar o tenant limpa o banco principal.
     
+    print(f"DEBUG: Tentando excluir empresa {company_id}...")
     result = supabase.table("tenants").delete().eq("id", company_id).execute()
+    print(f"DEBUG: Resposta exclusao: {result.data}")
+    
     if not result.data:
-        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+        print(f"DEBUG ERROR: Nenhuma empresa excluida para o ID {company_id}. Verifique permissoes ou se o ID existe.")
+        raise HTTPException(status_code=404, detail="Empresa não encontrada ou permissão negada")
+    
+    print(f"DEBUG: Empresa {company_id} excluida com sucesso.")
     
     # 2. (Opcional/Recomendado) Chamar limpeza de auth.users via Edge Function
     # Por enquanto, focamos na limpeza do banco de dados que ja tem os cascades.
