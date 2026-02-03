@@ -41,12 +41,10 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
     """
     try:
         # 1. Gerar link de convite via Edge Function
-        res_user = supabase.functions.invoke("create-user", invoke_options={
-            "body": {
-                "email": company.admin_email,
-                "tenant_id": tenant_id,
-                "full_name": company.admin_name
-            }
+        res_user = supabase.functions.invoke("create-user", body={
+            "email": company.admin_email,
+            "tenant_id": tenant_id,
+            "full_name": company.admin_name
         })
         
         invite_data = res_user.data
@@ -80,13 +78,11 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
         </html>
         """
 
-        supabase.functions.invoke("send-email", invoke_options={
-            "body": {
-                "to": company.admin_email,
-                "subject": f"Bem-vindo ao Pneu Control - {company.razao_social}",
-                "html": email_html,
-                "resend_api_key": resend_key
-            }
+        supabase.functions.invoke("send-email", body={
+            "to": company.admin_email,
+            "subject": f"Bem-vindo ao Pneu Control - {company.razao_social}",
+            "html": email_html,
+            "resend_api_key": resend_key
         })
 
     except Exception as e:
