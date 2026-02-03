@@ -65,7 +65,7 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
             <body style="font-family: sans-serif; color: #333;">
                 <h1 style="color: #2563eb;">Bem-vindo ao Pneu Control!</h1>
                 <p>Olá <strong>{company.admin_name}</strong>,</p>
-                <p>Sua conta para a empresa <strong>{company.name}</strong> foi criada com sucesso.</p>
+                <p>Sua conta para a empresa <strong>{company.razao_social}</strong> foi criada com sucesso.</p>
                 <p>Para começar a gerenciar seus pneus e frotas, clique no botão abaixo para definir sua senha:</p>
                 <div style="margin: 30px 0;">
                     <a href="{invite_link}" 
@@ -83,7 +83,7 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
         supabase.functions.invoke("send-email", invoke_options={
             "body": {
                 "to": company.admin_email,
-                "subject": f"Bem-vindo ao Pneu Control - {company.name}",
+                "subject": f"Bem-vindo ao Pneu Control - {company.razao_social}",
                 "html": email_html,
                 "resend_api_key": resend_key
             }
@@ -158,3 +158,41 @@ async def get_company(company_id: str, supabase: Client = Depends(get_supabase))
     resp["name"] = resp.get("nome_fantasia") or resp.get("razao_social")
     
     return resp
+
+@router.put("/companies/{company_id}", response_model=CompanyResponse)
+async def update_company(company_id: str, company: CompanyCreate, supabase: Client = Depends(get_supabase)):
+    """Atualiza dados de uma empresa."""
+    update_data = {
+        "nome_fantasia": company.nome_fantasia or company.razao_social,
+        "razao_social": company.razao_social,
+        "porte": company.porte,
+        "regime_tributario": company.regime_tributario,
+        "segmento": company.segmento,
+        "endereco": company.endereco
+    }
+    
+    result = supabase.table("tenants").update(update_data).eq("id", company_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    resp = result.data[0]
+    resp["name"] = resp.get("nome_fantasia") or resp.get("razao_social")
+    return resp
+
+@router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(company_id: str, supabase: Client = Depends(get_supabase)):
+    """Exclui uma empresa e todos os dados relacionados (incluindo usuarios)."""
+    # 1. Buscar IDs de usuarios para remover do Auth do Supabase
+    users = supabase.table("users").select("id").eq("tenant_id", company_id).execute()
+    
+    # Nota: A remocao do auth.users deve ser feita via Admin API ou Edge Function
+    # Como as tabelas tem ON DELETE CASCADE, deletar o tenant limpa o banco principal.
+    
+    result = supabase.table("tenants").delete().eq("id", company_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    # 2. (Opcional/Recomendado) Chamar limpeza de auth.users via Edge Function
+    # Por enquanto, focamos na limpeza do banco de dados que ja tem os cascades.
+    
+    return None

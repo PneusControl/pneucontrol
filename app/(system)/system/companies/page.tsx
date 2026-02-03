@@ -100,16 +100,33 @@ export default function CompaniesPage() {
                                     </td>
                                     <td className="px-8 py-6">
                                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${company.status === 'active'
-                                                ? 'bg-emerald-50 text-emerald-600'
-                                                : 'bg-amber-50 text-amber-600'
+                                            ? 'bg-emerald-50 text-emerald-600'
+                                            : 'bg-amber-50 text-amber-600'
                                             }`}>
                                             {company.status === 'active' ? 'Ativo' : company.status}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-right">
-                                        <button className="text-gray-300 hover:text-indigo-600 transition-colors">
-                                            <MoreVertical size={20} />
-                                        </button>
+                                        <div className="flex items-center justify-end gap-3">
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Tem certeza que deseja excluir esta empresa definitivamente? Todos os dados vinculados (veículos, pneus, inspeções) serão apagados.')) {
+                                                        fetch(`${API_BASE_URL}/api/v1/system/companies/${company.id}`, { method: 'DELETE' })
+                                                            .then(() => setCompanies(prev => prev.filter(c => c.id !== company.id)))
+                                                    }
+                                                }}
+                                                className="p-2 text-gray-300 hover:text-rose-600 transition-colors"
+                                                title="Excluir Definitivamente"
+                                            >
+                                                <MoreVertical size={20} />
+                                            </button>
+                                            <Link
+                                                href={`/system/companies/${company.id}`}
+                                                className="p-2 text-gray-300 hover:text-indigo-600 transition-colors"
+                                            >
+                                                <ExternalLink size={20} />
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
