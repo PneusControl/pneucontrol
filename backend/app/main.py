@@ -6,7 +6,11 @@ Sistema Inteligente de Gestao e Predicao de Pneus
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import cnpj, system_admin, companies, suppliers, vehicles, tires, invoices, inspections
+from app.api.v1 import (
+    cnpj, system_admin, companies, suppliers, 
+    vehicles, tires, invoices, inspections, 
+    dashboard, predictions
+)
 
 app = FastAPI(
     title="Pneu Control API",
@@ -21,6 +25,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "https://pneucontrol.vercel.app",
+        "https://trax.app.br",
+        "https://www.trax.app.br",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -36,6 +42,8 @@ app.include_router(vehicles.router, prefix="/api/v1", tags=["Vehicles"])
 app.include_router(tires.router, prefix="/api/v1", tags=["Tires"])
 app.include_router(invoices.router, prefix="/api/v1", tags=["Invoices"])
 app.include_router(inspections.router, prefix="/api/v1", tags=["Inspections"])
+app.include_router(dashboard.router, prefix="/api/v1", tags=["Dashboard"])
+app.include_router(predictions.router, prefix="/api/v1", tags=["Predictions"])
 
 
 @app.get("/health")
