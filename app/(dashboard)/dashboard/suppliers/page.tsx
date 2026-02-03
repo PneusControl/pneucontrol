@@ -36,8 +36,12 @@ export default function SuppliersPage() {
     const tenantId = user?.user_metadata?.tenant_id
 
     useEffect(() => {
+        console.log('📦 SuppliersPage: Checking tenantId...', tenantId)
         if (tenantId) {
             fetchSuppliers()
+        } else {
+            console.warn('⚠️ SuppliersPage: No tenantId found for user')
+            setLoading(false)
         }
     }, [tenantId])
 

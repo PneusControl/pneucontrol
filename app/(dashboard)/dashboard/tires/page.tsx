@@ -45,8 +45,12 @@ export default function TiresPage() {
     const tenantId = user?.user_metadata?.tenant_id
 
     useEffect(() => {
+        console.log('📦 TiresPage: Checking tenantId...', tenantId)
         if (tenantId) {
             fetchData()
+        } else {
+            console.warn('⚠️ TiresPage: No tenantId found for user')
+            setLoading(false)
         }
     }, [tenantId])
 

@@ -31,7 +31,13 @@ export default function InvoicesPage() {
     const tenantId = user?.user_metadata?.tenant_id
 
     useEffect(() => {
-        if (tenantId) fetchInvoices()
+        console.log('📦 InvoicesPage: Checking tenantId...', tenantId)
+        if (tenantId) {
+            fetchInvoices()
+        } else {
+            console.warn('⚠️ InvoicesPage: No tenantId found for user')
+            setLoading(false)
+        }
     }, [tenantId])
 
     const fetchInvoices = async () => {
