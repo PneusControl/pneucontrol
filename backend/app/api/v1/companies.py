@@ -186,24 +186,38 @@ async def update_company(company_id: str, company: CompanyCreate, supabase: Clie
 @router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_company(company_id: str, supabase: Client = Depends(get_supabase)):
     """Exclui uma empresa e todos os dados relacionados (incluindo usuarios)."""
-    # 1. Buscar IDs de usuarios para remover do Auth do Supabase
-    users = supabase.table("users").select("id").eq("tenant_id", company_id).execute()
+    print(f"DEBUG: Iniciando exclusao da empresa {company_id}...")
     
-    # Nota: A remocao do auth.users deve ser feita via Admin API ou Edge Function
-    # Como as tabelas tem ON DELETE CASCADE, deletar o tenant limpa o banco principal.
-    
-    print(f"DEBUG: Tentando excluir empresa {company_id}...")
-    result = supabase.table("tenants").delete().eq("id", company_id).execute()
-    print(f"DEBUG: Resposta exclusao: {result.data}")
-    
-    if not result.data:
-        print(f"DEBUG ERROR: Nenhuma empresa excluida para o ID {company_id}. Verifique permissoes ou se o ID existe.")
-        raise HTTPException(status_code=404, detail="Empresa não encontrada ou permissão negada")
-    
-    print(f"DEBUG: Empresa {company_id} excluida com sucesso.")
-    
-    # 2. (Opcional/Recomendado) Chamar limpeza de auth.users via Edge Function
-    # Por enquanto, focamos na limpeza do banco de dados que ja tem os cascades.
+    try:
+        # 1. Buscar os IDs dos usuarios vinculados para remover do Auth
+        # Isso precisa ser feito ANTES de deletar o tenant se o cascade for muito rapido,
+        # ou logo depois se ja tivermos os IDs.
+        users_res = supabase.table("users").select("id").eq("tenant_id", company_id).execute()
+        user_ids = [u["id"] for u in users_res.data]
+        
+        # 2. Excluir o Tenant (o cascade limpara as tabelas public.*)
+        result = supabase.table("tenants").delete().eq("id", company_id).execute()
+        
+        if not result.data:
+            print(f"DEBUG ERROR: Empresa {company_id} nao encontrada ou sem permissao.")
+            raise HTTPException(status_code=404, detail="Empresa não encontrada ou permissão negada")
+
+        # 3. Limpeza do Supabase Auth (auth.users)
+        # Importante: auth.admin.delete_user remove permanentemente
+        for uid in user_ids:
+            try:
+                print(f"DEBUG: Removendo usuario {uid} do Auth...")
+                supabase.auth.admin.delete_user(uid)
+            except Exception as auth_err:
+                print(f"WARNING: Falha ao remover usuario {uid} do Auth: {str(auth_err)}")
+
+        print(f"DEBUG: Empresa {company_id} e seus {len(user_ids)} usuarios excluidos com sucesso.")
+        
+    except Exception as e:
+        print(f"Erro critico na exclusao da empresa: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Erro interno ao excluir empresa: {str(e)}")
     
     return None
 

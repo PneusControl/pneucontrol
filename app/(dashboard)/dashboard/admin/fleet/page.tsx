@@ -29,7 +29,7 @@ export default function FleetPage() {
         ano: new Date().getFullYear(),
         chassi: '',
         km_atual: 0,
-        status: 'Ativo',
+        status: 'active',
         observacoes: '',
         axle_configuration: [] as any[]
     })
@@ -82,7 +82,7 @@ export default function FleetPage() {
                 ano: new Date().getFullYear(),
                 chassi: '',
                 km_atual: 0,
-                status: 'Ativo',
+                status: 'active',
                 observacoes: '',
                 axle_configuration: [
                     { id: 1, type: 'dir', is_dual: false, tires: [null, null] }
@@ -204,8 +204,8 @@ export default function FleetPage() {
                                     <Settings2 size={16} className="text-indigo-600" />
                                     <span className="text-xs font-bold text-gray-500">{v.axle_configuration?.length || 0} Eixos</span>
                                 </div>
-                                <span className={`flex items-center gap-1.5 text-xs font-black uppercase ${v.status === 'Ativo' ? 'text-emerald-500' : 'text-gray-400'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${v.status === 'Ativo' ? 'bg-emerald-500' : 'bg-gray-400'}`}></div> {v.status}
+                                <span className={`flex items-center gap-1.5 text-xs font-black uppercase ${v.status === 'active' ? 'text-emerald-500' : 'text-gray-400'}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${v.status === 'active' ? 'bg-emerald-500' : 'bg-gray-400'}`}></div> {v.status === 'active' ? 'Ativo' : v.status}
                                 </span>
                             </div>
                         </div>
@@ -257,11 +257,13 @@ export default function FleetPage() {
                                                         value={formData.tipo}
                                                         onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value }))}
                                                     >
-                                                        <option value="Trator">Trator / Cavalo</option>
-                                                        <option value="Carreta">Carreta</option>
-                                                        <option value="Bitrem">Bitrem</option>
-                                                        <option value="Rodotrem">Rodotrem</option>
-                                                        <option value="Truck">Truck (Toco/Rígido)</option>
+                                                        <option value="caminhao">Caminhão / Cavalo</option>
+                                                        <option value="carreta">Carreta</option>
+                                                        <option value="bitrem">Bitrem</option>
+                                                        <option value="rodotrem">Rodotrem</option>
+                                                        <option value="van">Van</option>
+                                                        <option value="onibus">Ônibus</option>
+                                                        <option value="outro">Outro</option>
                                                     </select>
                                                 </div>
                                             </div>
