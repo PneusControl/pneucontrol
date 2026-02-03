@@ -38,63 +38,106 @@ class CompanyResponse(BaseModel):
 async def process_company_onboarding(company: CompanyCreate, tenant_id: str, supabase: Client):
     """
     Fluxo assincrono de onboarding: gera link e envia email.
+    Usa chamadas HTTP diretas para as Edge Functions para maior confiabilidade.
     """
+    import httpx
+    
     try:
+        supabase_url = settings.SUPABASE_URL
+        service_key = settings.SUPABASE_SERVICE_KEY
+        
+        headers = {
+            "Authorization": f"Bearer {service_key}",
+            "Content-Type": "application/json",
+            "apikey": service_key
+        }
+        
         # 1. Gerar link de convite via Edge Function
         print(f"DEBUG: Gerando link de convite para {company.admin_email}...")
-        res_user = supabase.functions.invoke("create-user", body={
-            "email": company.admin_email,
-            "tenant_id": tenant_id,
-            "full_name": company.admin_name
-        })
         
-        print(f"DEBUG: Resposta create-user: {res_user.data}")
-        invite_data = res_user.data
-        if not invite_data or "invite_link" not in invite_data:
-            print(f"DEBUG ERROR: Falha ao gerar link: {invite_data}")
-            return
-        
-        invite_link = invite_data["invite_link"]
-        print(f"DEBUG: Link gerado: {invite_link}")
+        async with httpx.AsyncClient() as client:
+            # Chamar create-user
+            create_user_res = await client.post(
+                f"{supabase_url}/functions/v1/create-user",
+                headers=headers,
+                json={
+                    "email": company.admin_email,
+                    "tenant_id": tenant_id,
+                    "full_name": company.admin_name
+                },
+                timeout=30.0
+            )
+            
+            print(f"DEBUG: Status create-user: {create_user_res.status_code}")
+            print(f"DEBUG: Resposta create-user: {create_user_res.text}")
+            
+            if create_user_res.status_code != 200:
+                print(f"DEBUG ERROR: Falha ao chamar create-user: {create_user_res.text}")
+                return
+            
+            invite_data = create_user_res.json()
+            if not invite_data or "invite_link" not in invite_data:
+                print(f"DEBUG ERROR: Resposta invalida de create-user: {invite_data}")
+                return
+            
+            invite_link = invite_data["invite_link"]
+            print(f"DEBUG: Link gerado: {invite_link}")
 
-        # 2. Buscar API Key do Resend para enviar o e-mail
-        resend_key = await secrets_manager.get_secret("RESEND_API_KEY")
-        if not resend_key:
-            print("DEBUG ERROR: RESEND_API_KEY nao encontrada")
-            return
+            # 2. Buscar API Key do Resend para enviar o e-mail
+            resend_key = await secrets_manager.get_secret("RESEND_API_KEY")
+            if not resend_key:
+                print("DEBUG ERROR: RESEND_API_KEY nao encontrada")
+                return
+            
+            print(f"DEBUG: RESEND_API_KEY obtida: {resend_key[:10]}...")
 
-        # 3. Enviar e-mail de boas-vindas
-        email_html = f"""
-        <html>
-            <body style="font-family: sans-serif; color: #333;">
-                <h1 style="color: #2563eb;">Bem-vindo ao Pneu Control!</h1>
-                <p>Olá <strong>{company.admin_name}</strong>,</p>
-                <p>Sua conta para a empresa <strong>{company.razao_social}</strong> foi criada com sucesso.</p>
-                <p>Para começar a gerenciar seus pneus e frotas, clique no botão abaixo para definir sua senha:</p>
-                <div style="margin: 30px 0;">
-                    <a href="{invite_link}" 
-                       style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                       Configurar minha Senha
-                    </a>
-                </div>
-                <p>Este link é válido por 48 horas.</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 12px; color: #666;">Se você não solicitou esta conta, ignore este email.</p>
-            </body>
-        </html>
-        """
+            # 3. Enviar e-mail de boas-vindas
+            email_html = f"""
+            <html>
+                <body style="font-family: sans-serif; color: #333;">
+                    <h1 style="color: #2563eb;">Bem-vindo ao Pneu Control!</h1>
+                    <p>Olá <strong>{company.admin_name}</strong>,</p>
+                    <p>Sua conta para a empresa <strong>{company.razao_social}</strong> foi criada com sucesso.</p>
+                    <p>Para começar a gerenciar seus pneus e frotas, clique no botão abaixo para definir sua senha:</p>
+                    <div style="margin: 30px 0;">
+                        <a href="{invite_link}" 
+                           style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                           Configurar minha Senha
+                        </a>
+                    </div>
+                    <p>Este link é válido por 48 horas.</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="font-size: 12px; color: #666;">Se você não solicitou esta conta, ignore este email.</p>
+                </body>
+            </html>
+            """
 
-        print(f"Enviando e-mail via Resend para {company.admin_email}...")
-        res_email = supabase.functions.invoke("send-email", body={
-            "to": company.admin_email,
-            "subject": f"Bem-vindo ao Pneu Control - {company.razao_social}",
-            "html": email_html,
-            "resend_api_key": resend_key
-        })
-        print(f"Resposta send-email: {res_email.data}")
+            print(f"DEBUG: Enviando e-mail via Edge Function para {company.admin_email}...")
+            
+            send_email_res = await client.post(
+                f"{supabase_url}/functions/v1/send-email",
+                headers=headers,
+                json={
+                    "to": company.admin_email,
+                    "subject": f"Bem-vindo ao Pneu Control - {company.razao_social}",
+                    "html": email_html,
+                    "resend_api_key": resend_key
+                },
+                timeout=30.0
+            )
+            
+            print(f"DEBUG: Status send-email: {send_email_res.status_code}")
+            print(f"DEBUG: Resposta send-email: {send_email_res.text}")
+            
+            if send_email_res.status_code != 200:
+                print(f"ERROR: Falha ao enviar email: {send_email_res.text}")
+            else:
+                print(f"SUCCESS: E-mail enviado para {company.admin_email}")
 
     except Exception as e:
         print(f"Erro crítico no onboarding da empresa {tenant_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 @router.post("/companies", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 async def create_company(company: CompanyCreate, background_tasks: BackgroundTasks, supabase: Client = Depends(get_supabase)):
