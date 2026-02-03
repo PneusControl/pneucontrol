@@ -8,6 +8,7 @@ export default function EditCompanyPage() {
     const { id } = useParams()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [resendingEmail, setResendingEmail] = useState(false)
     const [formData, setFormData] = useState({
         razao_social: '',
         nome_fantasia: '',
@@ -83,17 +84,40 @@ export default function EditCompanyPage() {
                     <h1 className="text-3xl font-bold text-gray-800">Editar Empresa</h1>
                     <p className="text-gray-400 font-medium">Atualize as informações do tenant.</p>
                 </div>
-                <button
-                    onClick={() => {
-                        if (confirm('EXCLUSÃO DEFINITIVA: Deseja apagar todos os dados desta empresa?')) {
-                            fetch(`${API_BASE_URL}/api/v1/system/companies/${id}`, { method: 'DELETE' })
-                                .then(() => router.push('/system/companies'))
-                        }
-                    }}
-                    className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all flex items-center gap-2 font-bold"
-                >
-                    <Trash2 size={20} /> Excluir Cliente
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={async () => {
+                            setResendingEmail(true)
+                            try {
+                                const res = await fetch(`${API_BASE_URL}/api/v1/system/companies/${id}/resend-email`, { method: 'POST' })
+                                if (res.ok) alert('E-mail de onboarding reenviado com sucesso!')
+                                else {
+                                    const err = await res.json()
+                                    alert(`Erro ao reenviar: ${err.detail || 'Erro desconhecido'}`)
+                                }
+                            } catch (err) {
+                                alert('Erro ao processar o reenvio.')
+                            } finally {
+                                setResendingEmail(false)
+                            }
+                        }}
+                        disabled={resendingEmail}
+                        className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl hover:bg-emerald-100 transition-all flex items-center gap-2 font-bold disabled:opacity-50"
+                    >
+                        {resendingEmail ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />} {resendingEmail ? 'Enviando...' : 'Reenviar Convite'}
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (confirm('EXCLUSÃO DEFINITIVA: Deseja apagar todos os dados desta empresa?')) {
+                                fetch(`${API_BASE_URL}/api/v1/system/companies/${id}`, { method: 'DELETE' })
+                                    .then(() => router.push('/system/companies'))
+                            }
+                        }}
+                        className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all flex items-center gap-2 font-bold"
+                    >
+                        <Trash2 size={20} /> Excluir Cliente
+                    </button>
+                </div>
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-8">

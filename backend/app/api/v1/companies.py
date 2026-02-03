@@ -41,21 +41,27 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
     """
     try:
         # 1. Gerar link de convite via Edge Function
+        print(f"DEBUG: Gerando link de convite para {company.admin_email}...")
         res_user = supabase.functions.invoke("create-user", body={
             "email": company.admin_email,
             "tenant_id": tenant_id,
             "full_name": company.admin_name
         })
         
+        print(f"DEBUG: Resposta create-user: {res_user.data}")
         invite_data = res_user.data
         if not invite_data or "invite_link" not in invite_data:
-            print(f"Erro ao gerar link de convite: {invite_data}")
+            print(f"DEBUG ERROR: Falha ao gerar link: {invite_data}")
             return
-
+        
         invite_link = invite_data["invite_link"]
+        print(f"DEBUG: Link gerado: {invite_link}")
 
         # 2. Buscar API Key do Resend para enviar o e-mail
         resend_key = await secrets_manager.get_secret("RESEND_API_KEY")
+        if not resend_key:
+            print("DEBUG ERROR: RESEND_API_KEY nao encontrada")
+            return
 
         # 3. Enviar e-mail de boas-vindas
         email_html = f"""
@@ -78,12 +84,14 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
         </html>
         """
 
-        supabase.functions.invoke("send-email", body={
+        print(f"Enviando e-mail via Resend para {company.admin_email}...")
+        res_email = supabase.functions.invoke("send-email", body={
             "to": company.admin_email,
             "subject": f"Bem-vindo ao Pneu Control - {company.razao_social}",
             "html": email_html,
             "resend_api_key": resend_key
         })
+        print(f"Resposta send-email: {res_email.data}")
 
     except Exception as e:
         print(f"Erro crítico no onboarding da empresa {tenant_id}: {str(e)}")
@@ -192,3 +200,34 @@ async def delete_company(company_id: str, supabase: Client = Depends(get_supabas
     # Por enquanto, focamos na limpeza do banco de dados que ja tem os cascades.
     
     return None
+
+@router.post("/companies/{company_id}/resend-email")
+async def resend_company_onboarding(company_id: str, background_tasks: BackgroundTasks, supabase: Client = Depends(get_supabase)):
+    """Reenvia o e-mail de onboarding para o admin da empresa."""
+    # 1. Buscar a empresa
+    res_tenant = supabase.table("tenants").select("*").eq("id", company_id).single().execute()
+    if not res_tenant.data:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    
+    tenant = res_tenant.data
+    
+    # 2. Buscar o usuário admin vinculado a esse tenant
+    res_user = supabase.table("users").select("*").eq("tenant_id", company_id).eq("role", "admin").execute()
+    if not res_user.data:
+        raise HTTPException(status_code=400, detail="Usuário admin não encontrado para esta empresa.")
+
+    user = res_user.data[0]
+    
+    # Mapear para o schema CompanyCreate para reuso da funcao
+    mock_company = CompanyCreate(
+        razao_social=tenant.get("razao_social"),
+        nome_fantasia=tenant.get("nome_fantasia"),
+        cnpj=tenant.get("cnpj"),
+        admin_name=user.get("full_name"),
+        admin_email=user.get("email"),
+        plan=tenant.get("plan", "basic")
+    )
+    
+    background_tasks.add_task(process_company_onboarding, mock_company, company_id, supabase)
+    
+    return {"message": "Processo de reenvio de e-mail iniciado"}

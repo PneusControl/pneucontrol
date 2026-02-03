@@ -109,6 +109,24 @@ export default function CompaniesPage() {
                                     <td className="px-8 py-6 text-right">
                                         <div className="flex items-center justify-end gap-3">
                                             <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const res = await fetch(`${API_BASE_URL}/api/v1/system/companies/${company.id}/resend-email`, { method: 'POST' })
+                                                        if (res.ok) alert('E-mail de onboarding reenviado com sucesso!')
+                                                        else {
+                                                            const err = await res.json()
+                                                            alert(`Erro ao reenviar: ${err.detail || 'Erro desconhecido'}`)
+                                                        }
+                                                    } catch (err) {
+                                                        alert('Erro ao processar o reenvio.')
+                                                    }
+                                                }}
+                                                className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
+                                                title="Reenviar E-mail de Onboarding"
+                                            >
+                                                <Mail size={20} />
+                                            </button>
+                                            <button
                                                 onClick={() => {
                                                     if (confirm('Tem certeza que deseja excluir esta empresa definitivamente? Todos os dados vinculados (veículos, pneus, inspeções) serão apagados.')) {
                                                         fetch(`${API_BASE_URL}/api/v1/system/companies/${company.id}`, { method: 'DELETE' })
@@ -118,11 +136,12 @@ export default function CompaniesPage() {
                                                 className="p-2 text-gray-300 hover:text-rose-600 transition-colors"
                                                 title="Excluir Definitivamente"
                                             >
-                                                <MoreVertical size={20} />
+                                                <Trash2 size={20} />
                                             </button>
                                             <Link
                                                 href={`/system/companies/${company.id}`}
                                                 className="p-2 text-gray-300 hover:text-indigo-600 transition-colors"
+                                                title="Configurações / Detalhes"
                                             >
                                                 <ExternalLink size={20} />
                                             </Link>
