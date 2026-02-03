@@ -98,10 +98,11 @@ async def create_company(company: CompanyCreate, background_tasks: BackgroundTas
     
     # 2. Inserir em tenants
     new_tenant = {
-        "name": company.name,
+        "nome_fantasia": company.name,
+        "razao_social": company.name,
         "cnpj": company.cnpj,
-        "plan": company.plan,
-        "status": "active"
+        "status": "active",
+        "max_vehicles": 100
     }
     
     result = supabase.table("tenants").insert(new_tenant).execute()
@@ -116,12 +117,21 @@ async def create_company(company: CompanyCreate, background_tasks: BackgroundTas
     # 3. Agendar onboarding em background para não travar a resposta da API
     background_tasks.add_task(process_company_onboarding, company, tenant_id, supabase)
     
-    return result.data[0]
+    # Map for response
+    resp = result.data[0]
+    resp["name"] = resp.get("nome_fantasia") or resp.get("razao_social")
+    
+    return resp
 
 @router.get("/companies", response_model=List[CompanyResponse])
 async def list_companies(supabase: Client = Depends(get_supabase)):
     """Lista todas as empresas."""
     result = supabase.table("tenants").select("*").execute()
+    
+    # Map fields for frontend
+    for item in result.data:
+        item["name"] = item.get("nome_fantasia") or item.get("razao_social")
+        
     return result.data
 
 @router.get("/companies/{company_id}", response_model=CompanyResponse)
@@ -130,4 +140,8 @@ async def get_company(company_id: str, supabase: Client = Depends(get_supabase))
     result = supabase.table("tenants").select("*").eq("id", company_id).execute()
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa nao encontrada")
-    return result.data[0]
+    
+    resp = result.data[0]
+    resp["name"] = resp.get("nome_fantasia") or resp.get("razao_social")
+    
+    return resp
