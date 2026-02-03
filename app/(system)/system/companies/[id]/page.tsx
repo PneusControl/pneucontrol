@@ -2,7 +2,7 @@
 import { API_BASE_URL } from '@/lib/api-config'
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Building2, User, Mail, ShieldCheck, ArrowRight, Loader2, Save, Trash2 } from 'lucide-react'
+import { Building2, User, Mail as MailIcon, ShieldCheck, ArrowRight, Loader2, Save, Trash2 as TrashIcon } from 'lucide-react'
 
 export default function EditCompanyPage() {
     const { id } = useParams()
@@ -104,7 +104,7 @@ export default function EditCompanyPage() {
                         disabled={resendingEmail}
                         className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl hover:bg-emerald-100 transition-all flex items-center gap-2 font-bold disabled:opacity-50"
                     >
-                        {resendingEmail ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />} {resendingEmail ? 'Enviando...' : 'Reenviar Convite'}
+                        {resendingEmail ? <Loader2 className="animate-spin" size={20} /> : <MailIcon size={20} />} {resendingEmail ? 'Enviando...' : 'Reenviar Convite'}
                     </button>
                     <button
                         onClick={async () => {
@@ -121,7 +121,7 @@ export default function EditCompanyPage() {
                         }}
                         className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all flex items-center gap-2 font-bold"
                     >
-                        <Trash2 size={20} /> Excluir Cliente
+                        <TrashIcon size={20} /> Excluir Cliente
                     </button>
                 </div>
             </header>

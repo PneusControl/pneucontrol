@@ -2,7 +2,7 @@
 import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Building2, Search, Loader2, Trash2, Mail, ExternalLink } from 'lucide-react'
+import { Plus, Building2, Search, Loader2, Trash2 as TrashIcon, Mail as MailIcon, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface Company {
@@ -124,7 +124,7 @@ export default function CompaniesPage() {
                                                 className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
                                                 title="Reenviar E-mail de Onboarding"
                                             >
-                                                <Mail size={20} />
+                                                <MailIcon size={20} />
                                             </button>
                                             <button
                                                 onClick={async () => {
@@ -142,7 +142,7 @@ export default function CompaniesPage() {
                                                 className="p-2 text-gray-300 hover:text-rose-600 transition-colors"
                                                 title="Excluir Definitivamente"
                                             >
-                                                <Trash2 size={20} />
+                                                <TrashIcon size={20} />
                                             </button>
                                             <Link
                                                 href={`/system/companies/${company.id}`}
