@@ -40,7 +40,11 @@ export default function CNPJSearch({ onSuccess }: CNPJSearchProps) {
             if (!response.ok) throw new Error('CNPJ não encontrado ou erro na busca.')
 
             const data = await response.json()
-            onSuccess(data)
+            if (data.success && data.data) {
+                onSuccess(data.data)
+            } else {
+                throw new Error('Formato de resposta inválido.')
+            }
         } catch (err: any) {
             setError(err.message)
         } finally {

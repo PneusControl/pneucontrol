@@ -47,3 +47,6 @@ ios/
 *.pyc
 *.pyo
 *.egg-info
+
+# Antigravity Skills (local only)
+.agent/
