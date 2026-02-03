@@ -9,8 +9,13 @@ import CNPJSearch from '@/components/admin/CNPJSearch'
 export default function NewCompanyPage() {
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
-        name: '',
+        razao_social: '',
+        nome_fantasia: '',
         cnpj: '',
+        porte: '',
+        regime_tributario: '',
+        segmento: 'Transporte',
+        endereco: null as any,
         admin_name: '',
         admin_email: '',
         plan: 'basic'
@@ -20,8 +25,12 @@ export default function NewCompanyPage() {
     const handleCNPJSuccess = (data: any) => {
         setFormData(prev => ({
             ...prev,
-            name: data.nome_fantasia || data.razao_social,
-            cnpj: data.cnpj
+            razao_social: data.razao_social,
+            nome_fantasia: data.nome_fantasia || data.razao_social,
+            cnpj: data.cnpj,
+            porte: data.porte,
+            regime_tributario: data.natureza_juridica,
+            endereco: data.endereco
         }))
     }
 
@@ -63,83 +72,118 @@ export default function NewCompanyPage() {
 
                 {/* Passo 2: Detalhes */}
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Nome da Empresa / Fantasia</label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                    <Building2 size={18} />
-                                </div>
+                    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-50 space-y-6">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <Building2 className="text-indigo-600" size={20} /> Dados da Empresa
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Razão Social</label>
                                 <input
                                     type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    value={formData.razao_social}
+                                    onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })}
                                     required
-                                    className="w-full bg-white border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm transition-all"
-                                    placeholder="Ex: Transportadora Silva"
+                                    className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Nome Fantasia</label>
+                                <input
+                                    type="text"
+                                    value={formData.nome_fantasia}
+                                    onChange={(e) => setFormData({ ...formData, nome_fantasia: e.target.value })}
+                                    className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Porte</label>
+                                <input
+                                    type="text"
+                                    value={formData.porte}
+                                    onChange={(e) => setFormData({ ...formData, porte: e.target.value })}
+                                    className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Regime Tributário</label>
+                                <input
+                                    type="text"
+                                    value={formData.regime_tributario}
+                                    onChange={(e) => setFormData({ ...formData, regime_tributario: e.target.value })}
+                                    className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Admin - Nome Completo</label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                    <User size={18} />
-                                </div>
+                        {formData.endereco && (
+                            <div className="p-6 bg-indigo-50/30 rounded-[24px] border border-indigo-50">
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Endereço Identificado</p>
+                                <p className="text-sm text-indigo-900 font-medium">
+                                    {formData.endereco.logradouro}, {formData.endereco.numero} - {formData.endereco.bairro}
+                                </p>
+                                <p className="text-sm text-indigo-700">
+                                    {formData.endereco.municipio} / {formData.endereco.uf} - CEP: {formData.endereco.cep}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-50 space-y-6">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <User className="text-indigo-600" size={20} /> Administrador do Sistema
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Nome Completo</label>
                                 <input
                                     type="text"
                                     value={formData.admin_name}
                                     onChange={(e) => setFormData({ ...formData, admin_name: e.target.value })}
                                     required
-                                    className="w-full bg-white border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm transition-all"
-                                    placeholder="Ex: Roberto Carlos"
+                                    className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium"
                                 />
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Admin - E-mail Corporativo</label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                    <Mail size={18} />
-                                </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">E-mail Corporativo</label>
                                 <input
                                     type="email"
                                     value={formData.admin_email}
                                     onChange={(e) => setFormData({ ...formData, admin_email: e.target.value })}
                                     required
-                                    className="w-full bg-white border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm transition-all"
-                                    placeholder="roberto@transportadora.com"
+                                    className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium"
                                 />
                             </div>
                         </div>
+                    </div>
 
+                    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-50">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Plano</label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-indigo-600 transition-colors">
-                                    <ShieldCheck size={18} />
-                                </div>
-                                <select
-                                    value={formData.plan}
-                                    onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-                                    className="w-full bg-white border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 shadow-sm transition-all appearance-none"
-                                >
-                                    <option value="basic">Basic (R$ 799/mês)</option>
-                                    <option value="pro">Pro (R$ 1.499/mês)</option>
-                                    <option value="enterprise">Enterprise (R$ 2.499/mês)</option>
-                                </select>
-                            </div>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Plano Escolhido</label>
+                            <select
+                                value={formData.plan}
+                                onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                                className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-medium appearance-none"
+                            >
+                                <option value="basic">Basic (Até 50 veículos)</option>
+                                <option value="pro">Pro (Até 200 veículos)</option>
+                                <option value="enterprise">Enterprise (Ilimitado + IA Avançada)</option>
+                            </select>
                         </div>
                     </div>
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-indigo-600 text-white rounded-2xl py-5 font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        className="w-full bg-indigo-600 text-white rounded-[24px] py-6 font-black shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : 'Salvar Empresa e Enviar Convite'} <ArrowRight size={20} />
+                        {loading ? <Loader2 className="animate-spin" /> : 'Finalizar Cadastro e Ativar Tenant'} <ArrowRight size={20} />
                     </button>
                 </form>
             </div>

@@ -415,7 +415,7 @@ app/
 - [ ] Admin clica no link e define senha
 - [ ] Admin faz primeiro login
 
-**Status:** ✅ Fluxo completo de onboarding e cadastro funcional
+**Status:** ✅ Fluxo completo de onboarding e cadastro funcional com todos os campos (Endereço JSON, Porte, Regime)
 
 ### 2.6 Gestão de Secrets (Interface) [Ref: CHECK, GUIA]
 

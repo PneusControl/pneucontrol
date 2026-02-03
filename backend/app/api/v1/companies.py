@@ -13,18 +13,27 @@ def get_supabase() -> Client:
 
 # Schemas
 class CompanyCreate(BaseModel):
-    name: str
+    razao_social: str
+    nome_fantasia: Optional[str] = None
     cnpj: str
+    porte: Optional[str] = None
+    regime_tributario: Optional[str] = None
+    segmento: Optional[str] = "Transporte"
+    endereco: Optional[dict] = None
     admin_name: str
     admin_email: str
     plan: Optional[str] = "basic"
 
 class CompanyResponse(BaseModel):
     id: str
-    name: str
+    name: str  # Frontend compatible
+    razao_social: Optional[str] = None
+    nome_fantasia: Optional[str] = None
     cnpj: str
     status: str
     created_at: str
+    porte: Optional[str] = None
+    segmento: Optional[str] = None
 
 async def process_company_onboarding(company: CompanyCreate, tenant_id: str, supabase: Client):
     """
@@ -98,9 +107,13 @@ async def create_company(company: CompanyCreate, background_tasks: BackgroundTas
     
     # 2. Inserir em tenants
     new_tenant = {
-        "nome_fantasia": company.name,
-        "razao_social": company.name,
+        "nome_fantasia": company.nome_fantasia or company.razao_social,
+        "razao_social": company.razao_social,
         "cnpj": company.cnpj,
+        "porte": company.porte,
+        "regime_tributario": company.regime_tributario,
+        "segmento": company.segmento,
+        "endereco": company.endereco,
         "status": "active",
         "max_vehicles": 100
     }
