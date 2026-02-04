@@ -259,36 +259,45 @@ async def delete_company(company_id: str, supabase: Client = Depends(get_supabas
             "apikey": service_key
         }
         
-        # 1. Buscar os IDs dos usuarios vinculados para remover do Auth
-        # Isso precisa ser feito ANTES de deletar o tenant
+        # 1. Buscar os IDs dos usuarios vinculados ANTES de qualquer delete
         users_res = supabase.table("users").select("id").eq("tenant_id", company_id).execute()
         user_ids = [u["id"] for u in users_res.data]
         print(f"DEBUG: Encontrados {len(user_ids)} usuarios para limpar do Auth: {user_ids}")
         
-        # 2. Excluir o Tenant (o cascade limpara as tabelas public.*)
+        # 2. Verificar se o tenant existe antes de prosseguir
+        tenant_check = supabase.table("tenants").select("id").eq("id", company_id).execute()
+        if not tenant_check.data:
+            print(f"DEBUG ERROR: Empresa {company_id} nao encontrada.")
+            raise HTTPException(status_code=404, detail="Empresa não encontrada")
+        
+        # 3. PRIMEIRO: Deletar usuarios do Supabase Auth via Edge Function
+        # Isso precisa acontecer ANTES de deletar o tenant
+        if user_ids:
+            print(f"DEBUG: Deletando {len(user_ids)} usuarios do Auth...")
+            async with httpx.AsyncClient() as client:
+                for uid in user_ids:
+                    try:
+                        print(f"DEBUG: Chamando delete-user para {uid}...")
+                        delete_res = await client.post(
+                            f"{supabase_url}/functions/v1/delete-user",
+                            headers=headers,
+                            json={"user_id": uid},
+                            timeout=30.0
+                        )
+                        print(f"DEBUG: Resposta delete-user para {uid}: {delete_res.status_code}")
+                        
+                        if delete_res.status_code != 200:
+                            print(f"WARNING: Falha ao remover usuario {uid} do Auth: {delete_res.text}")
+                    except Exception as auth_err:
+                        print(f"WARNING: Erro ao chamar delete-user para {uid}: {str(auth_err)}")
+        
+        # 4. DEPOIS: Excluir o Tenant (o cascade limpara as tabelas public.*)
+        print(f"DEBUG: Deletando tenant {company_id}...")
         result = supabase.table("tenants").delete().eq("id", company_id).execute()
         
         if not result.data:
-            print(f"DEBUG ERROR: Empresa {company_id} nao encontrada ou sem permissao.")
-            raise HTTPException(status_code=404, detail="Empresa não encontrada ou permissão negada")
-
-        # 3. Limpeza do Supabase Auth via Edge Function (mais confiavel)
-        async with httpx.AsyncClient() as client:
-            for uid in user_ids:
-                try:
-                    print(f"DEBUG: Removendo usuario {uid} do Auth via Edge Function...")
-                    delete_res = await client.post(
-                        f"{supabase_url}/functions/v1/delete-user",
-                        headers=headers,
-                        json={"user_id": uid},
-                        timeout=30.0
-                    )
-                    print(f"DEBUG: Resposta delete-user para {uid}: {delete_res.status_code} - {delete_res.text}")
-                    
-                    if delete_res.status_code != 200:
-                        print(f"WARNING: Falha ao remover usuario {uid} do Auth: {delete_res.text}")
-                except Exception as auth_err:
-                    print(f"WARNING: Erro ao chamar delete-user para {uid}: {str(auth_err)}")
+            print(f"DEBUG ERROR: Falha ao deletar tenant {company_id}.")
+            raise HTTPException(status_code=500, detail="Erro ao excluir empresa")
 
         print(f"DEBUG: Empresa {company_id} e seus {len(user_ids)} usuarios excluidos com sucesso.")
         
