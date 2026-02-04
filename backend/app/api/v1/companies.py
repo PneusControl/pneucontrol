@@ -94,20 +94,36 @@ async def process_company_onboarding(company: CompanyCreate, tenant_id: str, sup
             # 3. Enviar e-mail de boas-vindas
             email_html = f"""
             <html>
-                <body style="font-family: sans-serif; color: #333;">
-                    <h1 style="color: #2563eb;">Bem-vindo ao Pneu Control!</h1>
-                    <p>Olá <strong>{company.admin_name}</strong>,</p>
-                    <p>Sua conta para a empresa <strong>{company.razao_social}</strong> foi criada com sucesso.</p>
-                    <p>Para começar a gerenciar seus pneus e frotas, clique no botão abaixo para definir sua senha:</p>
-                    <div style="margin: 30px 0;">
-                        <a href="{invite_link}" 
-                           style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                           Configurar minha Senha
-                        </a>
+                <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background-color: #f8fafc; margin: 0; padding: 0;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                        <!-- Header com Logo -->
+                        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); padding: 30px; text-align: center;">
+                            <img src="https://trax.app.br/brand/logo.png" alt="Trax Prediction" style="height: 60px; margin-bottom: 10px;" />
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Bem-vindo ao Trax Prediction!</h1>
+                        </div>
+                        
+                        <!-- Conteúdo -->
+                        <div style="padding: 40px 30px;">
+                            <p style="font-size: 16px; line-height: 1.6;">Olá <strong>{company.admin_name}</strong>,</p>
+                            <p style="font-size: 16px; line-height: 1.6;">Sua conta para a empresa <strong>{company.razao_social}</strong> foi criada com sucesso no sistema de gestão preditiva de pneus.</p>
+                            <p style="font-size: 16px; line-height: 1.6;">Para começar a gerenciar seus pneus e frotas, clique no botão abaixo para definir sua senha de acesso:</p>
+                            
+                            <div style="text-align: center; margin: 35px 0;">
+                                <a href="{invite_link}" 
+                                   style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+                                   Configurar minha Senha
+                                </a>
+                            </div>
+                            
+                            <p style="font-size: 14px; color: #64748b; text-align: center;">Este link é válido por 48 horas.</p>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="background-color: #f1f5f9; padding: 20px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="font-size: 12px; color: #94a3b8; margin: 0;">Se você não solicitou esta conta, ignore este email.</p>
+                            <p style="font-size: 12px; color: #94a3b8; margin: 10px 0 0 0;">© 2026 Trax Prediction - Gestão Inteligente de Pneus</p>
+                        </div>
                     </div>
-                    <p>Este link é válido por 48 horas.</p>
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                    <p style="font-size: 12px; color: #666;">Se você não solicitou esta conta, ignore este email.</p>
                 </body>
             </html>
             """

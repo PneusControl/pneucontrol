@@ -161,10 +161,12 @@ function SetupPasswordForm() {
             <div className="w-full max-w-md">
                 {/* Logo/Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
-                        <Lock className="h-8 w-8 text-white" />
-                    </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Pneu Control</h1>
+                    <img
+                        src="/brand/logo.png"
+                        alt="Trax Prediction"
+                        className="h-16 mx-auto mb-4"
+                    />
+                    <h1 className="text-3xl font-bold text-white mb-2">Trax Prediction</h1>
                     <p className="text-gray-400">Configure sua senha de acesso</p>
                 </div>
 
@@ -253,7 +255,7 @@ function SetupPasswordForm() {
 
                 {/* Footer */}
                 <p className="text-center text-gray-500 text-sm mt-6">
-                    © 2026 Pneu Control. Todos os direitos reservados.
+                    © 2026 Trax Prediction. Todos os direitos reservados.
                 </p>
             </div>
         </div>

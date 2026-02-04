@@ -15,7 +15,7 @@ serve(async (req) => {
         const { to, subject, html, resend_api_key } = body
 
         const apiKey = resend_api_key || Deno.env.get('RESEND_API_KEY')
-        // Dominio verificado no Resend: trax.app.br (sem subdominio)
+        // Dominio verificado no Resend: trax.app.br
         const fromDomain = Deno.env.get('EMAIL_FROM_DOMAIN') || 'trax.app.br'
 
         console.log(`Tentando enviar e-mail para ${to} via ${fromDomain}...`)
@@ -28,7 +28,7 @@ serve(async (req) => {
                 'Authorization': `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                from: `Pneu Control <noreply@${fromDomain}>`,
+                from: `Trax Prediction <noreply@${fromDomain}>`,
                 to: Array.isArray(to) ? to : [to],
                 subject: subject,
                 html: html,
