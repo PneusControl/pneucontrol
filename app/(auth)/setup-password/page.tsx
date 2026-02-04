@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
@@ -22,8 +22,14 @@ function SetupPasswordForm() {
     const [verifying, setVerifying] = useState(true)
     const [tokenError, setTokenError] = useState<string | null>(null)
 
+    const effectRan = useRef(false)
+
     useEffect(() => {
+        if (effectRan.current) return
+        effectRan.current = true
+
         const handleAuthCallback = async () => {
+            // ... existing logic ...
             try {
                 // Supabase envia o token via hash fragment (#access_token=...)
                 // Precisamos verificar se há token na URL
