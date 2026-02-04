@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: sessionUser.user_metadata?.role || 'operator',
             full_name: sessionUser.user_metadata?.full_name,
             email: sessionUser.email,
-            permissions: []
+            permissions: sessionUser.user_metadata?.permissions || []
           })
         }
       }
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: sessionUser.user_metadata?.role || 'operator',
           full_name: sessionUser.user_metadata?.full_name,
           email: sessionUser.email,
-          permissions: []
+          permissions: sessionUser.user_metadata?.permissions || []
         })
       }
     }

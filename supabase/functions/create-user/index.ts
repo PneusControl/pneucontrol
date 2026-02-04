@@ -20,11 +20,11 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        const { email, tenant_id, full_name } = await req.json()
+        const { email, tenant_id, full_name, role = 'admin', permissions = [] } = await req.json()
 
         console.log(`Creating invite for ${email} with redirect to ${FRONTEND_URL}/setup-password`)
 
-        // Criar convite de usuario admin
+        // Criar convite com metadata completo
         const { data, error } = await supabaseClient.auth.admin.generateLink({
             type: 'invite',
             email: email,
@@ -32,7 +32,8 @@ serve(async (req) => {
                 data: {
                     full_name,
                     tenant_id,
-                    role: 'admin'
+                    role, // 'admin' ou 'operator'
+                    permissions // Array de permissoes especificas
                 },
                 redirectTo: `${FRONTEND_URL}/setup-password`,
             }

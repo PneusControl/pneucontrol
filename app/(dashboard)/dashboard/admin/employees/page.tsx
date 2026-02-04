@@ -102,19 +102,85 @@ export default function EmployeesPage() {
 
                 if (error) throw error
             } else {
-                // In a real app, you'd use a service / edge function to create the auth user too
-                const { error } = await supabase
-                    .from('users')
-                    .insert([{
-                        tenant_id: currentUser.user_metadata.tenant_id,
-                        full_name: formData.full_name,
-                        email: formData.email,
-                        role: formData.role,
-                        is_active: formData.is_active,
-                        permissions: formData.permissions
-                    }])
+                // 1. Obter nome da empresa para o email
+                let companyName = 'Trax Fleet'
+                if (currentUser?.user_metadata?.tenant_id) {
+                    const { data: companyData } = await supabase
+                        .from('companies')
+                        .select('name')
+                        .eq('id', currentUser.user_metadata.tenant_id)
+                        .maybeSingle()
+                    if (companyData) companyName = companyData.name
+                }
 
-                if (error) throw error
+                // 2. Chamar Edge Function para criar usuário e gerar link
+                // NOTA: A function create-user foi atualizada para aceitar role e permissions
+                const { data: inviteData, error: inviteError } = await supabase.functions.invoke('create-user', {
+                    body: {
+                        email: formData.email,
+                        full_name: formData.full_name,
+                        tenant_id: currentUser.user_metadata.tenant_id,
+                        role: formData.role,
+                        permissions: formData.permissions
+                    }
+                })
+
+                if (inviteError) {
+                    console.error('Erro function create-user:', inviteError)
+                    throw new Error(inviteError.message || 'Erro ao gerar convite.')
+                }
+
+                const inviteLink = inviteData.invite_link
+
+                // 3. Template de Email
+                const emailHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: sans-serif; background-color: #f4f4f5; color: #18181b; }
+                        .container { max-width: 500px; margin: 40px auto; background: #ffffff; padding: 32px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+                        .button { display: block; width: 100%; background-color: #2563eb; color: white; padding: 14px 0; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 24px; }
+                        h1 { font-size: 24px; font-weight: bold; margin-bottom: 8px; color: #111827; }
+                        p { line-height: 1.6; color: #52525b; margin-bottom: 16px; }
+                        .footer { margin-top: 32px; font-size: 12px; color: #a1a1aa; text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Bem-vindo(a)!</h1>
+                        <p>Olá <strong>${formData.full_name}</strong>,</p>
+                        <p>Você foi convidado pelo administrador da empresa <strong>${companyName}</strong> para acessar a plataforma Trax Fleet.</p>
+                        <p>Seu perfil de acesso: <strong>${formData.role === 'admin' ? 'Administrador' : 'Colaborador'}</strong>.</p>
+                        <p>Clique no botão abaixo para definir sua senha segura e iniciar:</p>
+                        
+                        <a href="${inviteLink}" class="button">Definir Minha Senha</a>
+                        
+                        <p style="font-size: 13px; margin-top: 24px; color: #71717a;">Se o botão não funcionar, copie e cole este link:<br>${inviteLink}</p>
+                    </div>
+                    <div class="footer">
+                        © 2024 Trax Fleet Management. Enviado automaticamente.
+                    </div>
+                </body>
+                </html>
+                `
+
+                // 4. Enviar Email
+                const { error: emailError } = await supabase.functions.invoke('send-email', {
+                    body: {
+                        to: formData.email,
+                        subject: `Convite de Acesso - ${companyName}`,
+                        html: emailHtml
+                    }
+                })
+
+                if (emailError) {
+                    console.warn('Erro ao enviar email (Resend):', emailError)
+                    alert(`Usuário criado, mas houve erro no envio do e-mail. Link de acesso: ${inviteLink}`)
+                } else {
+                    // Feedback visual melhor seria ideal, mas alert serve por enquanto
+                    // O modal fecha logo em seguida via setIsModalOpen(false)
+                }
             }
 
             setIsModalOpen(false)
@@ -213,8 +279,8 @@ export default function EmployeesPage() {
                                 </td>
                                 <td className="px-8 py-5 text-center">
                                     <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${emp.role === 'admin' ? 'bg-amber-50 text-amber-600' :
-                                            emp.role === 'manager' ? 'bg-indigo-50 text-indigo-600' :
-                                                'bg-gray-100 text-gray-500'
+                                        emp.role === 'manager' ? 'bg-indigo-50 text-indigo-600' :
+                                            'bg-gray-100 text-gray-500'
                                         }`}>
                                         {emp.role}
                                     </span>
@@ -345,8 +411,8 @@ export default function EmployeesPage() {
                                                 type="button"
                                                 onClick={() => togglePermission(menu.id)}
                                                 className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${formData.permissions.includes(menu.id)
-                                                        ? 'bg-white border-indigo-600/20 text-indigo-600 shadow-sm'
-                                                        : 'border-transparent text-gray-400 hover:bg-gray-100'
+                                                    ? 'bg-white border-indigo-600/20 text-indigo-600 shadow-sm'
+                                                    : 'border-transparent text-gray-400 hover:bg-gray-100'
                                                     }`}
                                             >
                                                 <span className="font-black text-sm">{menu.label}</span>
