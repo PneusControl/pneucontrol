@@ -42,33 +42,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, sessionUser: any = null) => {
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle() // Evita 406 se não houver perfil ainda
 
-      if (!error) {
+      if (data) {
         setProfile(data)
+      } else {
+        console.warn('Perfil público não encontrado ou erro de fetch. Usando metadata de fallback.')
+        if (sessionUser) {
+          // CRITICAL FIX: Se o banco falhar, usamos o JWT para garantir acesso Admin
+          // Isso previne que o Admin vire "Operator" e veja tela branca
+          setProfile({
+            id: sessionUser.id,
+            role: sessionUser.user_metadata?.role || 'operator',
+            full_name: sessionUser.user_metadata?.full_name,
+            email: sessionUser.email,
+            permissions: []
+          })
+        }
       }
     } catch (err) {
       console.error('Erro ao buscar perfil do usuário:', err)
+      // Mesmo no catch, tentamos o fallback se tivermos user
+      if (sessionUser) {
+        setProfile({
+          id: sessionUser.id,
+          role: sessionUser.user_metadata?.role || 'operator',
+          full_name: sessionUser.user_metadata?.full_name,
+          email: sessionUser.email,
+          permissions: []
+        })
+      }
     }
   }
 
   useEffect(() => {
     const setData = async () => {
       const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) throw error
+      if (error) {
+        console.error('Erro getSession:', error)
+        setLoading(false)
+        return
+      }
 
       setSession(session)
       setUser(session?.user || null)
 
       if (session?.user) {
         await checkIsSystemAdmin(session.user.email!)
-        await fetchProfile(session.user.id)
+        // Importante: Passamos o objeto user para a função de perfil poder usar como backup
+        await fetchProfile(session.user.id, session.user)
       } else {
         setIsSystemAdmin(false)
         setProfile(null)
@@ -83,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session?.user) {
         await checkIsSystemAdmin(session.user.email!)
-        await fetchProfile(session.user.id)
+        await fetchProfile(session.user.id, session.user)
       } else {
         setIsSystemAdmin(false)
         setProfile(null)
