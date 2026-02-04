@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowRight } from 'lucide-react'
 
 function SetupPasswordForm() {
     const router = useRouter()
@@ -21,6 +21,7 @@ function SetupPasswordForm() {
     const [success, setSuccess] = useState(false)
     const [verifying, setVerifying] = useState(true)
     const [tokenError, setTokenError] = useState<string | null>(null)
+    const [showManualReset, setShowManualReset] = useState(false)
 
     const effectRan = useRef(false)
 
@@ -30,8 +31,15 @@ function SetupPasswordForm() {
 
         const handleAuthCallback = async () => {
             try {
+                // Listener de segurança: se a sessão mudar por qualquer motivo, destrava
+                const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        console.log('Evento SIGNED_IN detectado!')
+                        setVerifying(false)
+                    }
+                })
+
                 // 1. Tentar verificar sessão existente PRIMEIRO
-                // O Supabase Client pode já ter processado o hash automaticamente
                 const { data: { session: existingSession } } = await supabase.auth.getSession()
 
                 if (existingSession) {
@@ -40,24 +48,17 @@ function SetupPasswordForm() {
                     return
                 }
 
-                // 2. Se não tem sessão, verificar Hash da URL
+                // 2. Hash Params
                 const hashParams = new URLSearchParams(window.location.hash.substring(1))
                 const accessToken = hashParams.get('access_token')
                 const refreshToken = hashParams.get('refresh_token')
-                const type = hashParams.get('type')
 
-                // Verificar erros na URL
                 const errorParam = hashParams.get('error') || searchParams.get('error')
                 const errorDescription = hashParams.get('error_description') || searchParams.get('error_description')
 
                 if (errorParam) {
-                    // Ignora erro se a sessão mágica apareceu no meio tempo (auto processamento)
                     const { data: { session: lastCheck } } = await supabase.auth.getSession()
-                    if (lastCheck) {
-                        console.log('Erro na URL ignorado pois sessão foi encontrada.')
-                        setVerifying(false)
-                        return
-                    }
+                    if (lastCheck) { setVerifying(false); return }
 
                     console.error('Erro na URL:', errorParam, errorDescription)
                     setTokenError(errorDescription || 'Link inválido ou expirado.')
@@ -65,51 +66,56 @@ function SetupPasswordForm() {
                     return
                 }
 
-                // 3. Tentar troca manual SOMENTE se tiver tokens E não tiver sessão
+                // 3. Troca Manual com Timeout e Fallback
                 if (accessToken && refreshToken) {
                     console.log('Tokens na URL detectados, tentando troca manual...')
 
-                    const { data, error: sessionError } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken
-                    })
+                    try {
+                        // Promise Race com Timeout de 8s
+                        const { data, error: sessionError } = await Promise.race([
+                            supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
+                            new Promise<any>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000))
+                        ])
 
-                    if (sessionError) {
-                        // Última tentativa: verificar se a sessão apareceu agora (race condition)
-                        const { data: { session: retrySession } } = await supabase.auth.getSession()
-                        if (retrySession) {
-                            console.log('Troca falhou mas sessão apareceu (race condition tratada).')
+                        if (sessionError) {
+                            const { data: { session: retrySession } } = await supabase.auth.getSession()
+                            if (retrySession) { setVerifying(false); return }
+
+                            console.error('Erro ao criar sessão:', sessionError)
+                            setTokenError('Link expirado. Use o botão abaixo para redefinir sua senha.')
+                            setShowManualReset(true)
                             setVerifying(false)
                             return
                         }
 
-                        console.error('Erro ao criar sessão:', sessionError)
-                        setTokenError('Link expirado. Se você já clicou antes, tente fazer LOGIN ou usar "Esqueci minha senha".')
-                        setVerifying(false)
-                        return
-                    }
+                        if (data?.session) {
+                            console.log('Sessão criada manualmente com sucesso.')
+                            window.history.replaceState(null, '', window.location.pathname)
+                            setVerifying(false)
+                        }
+                    } catch (timeoutErr: any) {
+                        console.error('Timeout ou Erro:', timeoutErr)
+                        // Em caso de timeout, verificamos uma ultima vez e mostramos fallback
+                        const { data: { session: finalTimeoutCheck } } = await supabase.auth.getSession()
+                        if (finalTimeoutCheck) { setVerifying(false); return }
 
-                    if (data?.session) {
-                        console.log('Sessão criada manualmente com sucesso.')
-                        window.history.replaceState(null, '', window.location.pathname)
+                        setTokenError('O servidor demorou para responder. Tente redefinir manualmente.')
+                        setShowManualReset(true)
+                        setVerifying(false)
                     }
                 } else {
-                    // Sem sessão e sem tokens, verificar uma última vez
                     const { data: { session: finalCheck } } = await supabase.auth.getSession()
-                    if (finalCheck) {
-                        console.log('Sessão encontrada na checagem final.')
-                        setVerifying(false)
-                        return
-                    }
+                    if (finalCheck) { setVerifying(false); return }
 
-                    console.log('Nenhuma sessão e nenhum token encontrado.')
-                    setTokenError('Sessão não encontrada. Acesse o link enviado por email.')
+                    setTokenError('Link incompleto. Acesse novamente pelo email.')
+                    setVerifying(false)
                 }
 
-                setVerifying(false)
+                subscription?.unsubscribe()
+
             } catch (err) {
-                console.error('Erro inesperado:', err)
-                setTokenError('Erro ao processar convite.')
+                console.error('Erro geral:', err)
+                setTokenError('Erro ao processar. Tente novamente.')
                 setVerifying(false)
             }
         }
@@ -120,210 +126,133 @@ function SetupPasswordForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
-
-        // Validações
-        if (password.length < 8) {
-            setError('A senha deve ter pelo menos 8 caracteres')
-            return
-        }
-
-        if (password !== confirmPassword) {
-            setError('As senhas não coincidem')
-            return
-        }
+        if (password.length < 8) { setError('A senha deve ter pelo menos 8 caracteres'); return }
+        if (password !== confirmPassword) { setError('As senhas não coincidem'); return }
 
         setLoading(true)
-
         try {
-            const { error: updateError } = await supabase.auth.updateUser({
-                password: password
-            })
-
+            const { error: updateError } = await supabase.auth.updateUser({ password: password })
             if (updateError) {
-                // Tratar caso especial: senha já foi definida antes
-                if (updateError.message.includes('different from the old password') ||
-                    updateError.message.includes('same as the old password')) {
-                    setError('Esta senha já foi usada anteriormente. Você já configurou sua senha? Tente fazer login.')
-                    // Redirecionar para login após 3 segundos
-                    setTimeout(() => {
-                        router.push('/login')
-                    }, 3000)
+                if (updateError.message.includes('different') || updateError.message.includes('old password')) {
+                    setError('Senha já utilizada. Tente fazer login.')
+                    setTimeout(() => router.push('/login'), 3000)
                     return
                 }
                 throw updateError
             }
-
             setSuccess(true)
-
-            // Aguarda 2 segundos e redireciona para o dashboard
-            setTimeout(() => {
-                router.push('/dashboard')
-            }, 2000)
-
+            setTimeout(() => router.push('/dashboard'), 2000)
         } catch (err: any) {
-            console.error('Erro ao definir senha:', err)
-            setError(err.message || 'Erro ao definir senha. Tente novamente.')
+            setError(err.message || 'Erro ao definir senha.')
         } finally {
             setLoading(false)
         }
     }
 
-    // Estado de verificação inicial
+    const handleManualReset = () => {
+        router.push('/login?reset=true') // Redireciona para login onde user pode clicar em Esqueci Senha
+    }
+
     if (verifying) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
                 <div className="text-center">
                     <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
-                    <p className="text-white text-lg">Verificando seu link...</p>
+                    <p className="text-white text-lg">Validando seu acesso...</p>
                 </div>
             </div>
         )
     }
 
-    // Estado de erro no token
     if (tokenError) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
                 <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center">
-                    <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white mb-2">Link Inválido</h1>
+                    <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold text-white mb-2">Atenção</h1>
                     <p className="text-gray-300 mb-6">{tokenError}</p>
-                    <p className="text-sm text-gray-400 mb-6">
-                        O link pode ter expirado ou já foi utilizado.
-                        Entre em contato com o administrador para solicitar um novo link de acesso.
-                    </p>
-                    <button
-                        onClick={() => router.push('/login')}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-                    >
-                        Ir para Login
-                    </button>
+
+                    {showManualReset ? (
+                        <div className="space-y-4">
+                            <p className="text-sm text-gray-400">
+                                Como o link de convite expirou ou falhou, você pode solicitar um novo link de redefinição de senha seguro.
+                            </p>
+                            <button
+                                onClick={() => router.push('/login')}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                            >
+                                Ir para Login e Redefinir Senha
+                                <ArrowRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                        >
+                            Voltar para Login
+                        </button>
+                    )}
                 </div>
             </div>
         )
     }
 
-    // Estado de sucesso
     if (success) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
                 <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center">
                     <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white mb-2">Senha Definida!</h1>
-                    <p className="text-gray-300 mb-4">
-                        Sua senha foi configurada com sucesso.
-                    </p>
-                    <p className="text-sm text-gray-400">
-                        Redirecionando para o dashboard...
-                    </p>
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-500 mx-auto mt-4" />
+                    <h1 className="text-2xl font-bold text-white mb-2">Sucesso!</h1>
+                    <p className="text-gray-300">Redirecionando...</p>
                 </div>
             </div>
         )
     }
 
-    // Formulário principal
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
             <div className="w-full max-w-md">
-                {/* Logo/Header */}
                 <div className="text-center mb-8">
-                    <img
-                        src="/brand/logo.png"
-                        alt="Trax Prediction"
-                        className="h-16 mx-auto mb-4"
-                    />
-                    <h1 className="text-3xl font-bold text-white mb-2">Trax Prediction</h1>
-                    <p className="text-gray-400">Configure sua senha de acesso</p>
+                    <img src="/brand/logo.png" alt="Trax" className="h-16 mx-auto mb-4" />
+                    <h1 className="text-3xl font-bold text-white mb-2">Definir Senha</h1>
                 </div>
-
-                {/* Card do formulário */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Nova Senha */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Nova Senha
-                            </label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Nova Senha</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Mínimo 8 caracteres"
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                    required
-                                    minLength={8}
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    required minLength={8}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                                >
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
                             </div>
                         </div>
-
-                        {/* Confirmar Senha */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Confirmar Senha
-                            </label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Confirmar Senha</label>
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Digite novamente"
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                required
-                                minLength={8}
+                                placeholder="Repita a senha"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required minLength={8}
                             />
                         </div>
-
-                        {/* Erro */}
-                        {error && (
-                            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        {/* Requisitos de senha */}
-                        <div className="text-sm text-gray-400 space-y-1">
-                            <p className={password.length >= 8 ? 'text-emerald-400' : ''}>
-                                • Mínimo de 8 caracteres
-                            </p>
-                            <p className={password === confirmPassword && password.length > 0 ? 'text-emerald-400' : ''}>
-                                • Senhas devem coincidir
-                            </p>
-                        </div>
-
-                        {/* Botão Submit */}
-                        <button
-                            type="submit"
-                            disabled={loading || password.length < 8 || password !== confirmPassword}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                    Configurando...
-                                </>
-                            ) : (
-                                <>
-                                    <Lock className="h-5 w-5" />
-                                    Definir Senha
-                                </>
-                            )}
+                        {error && <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded">{error}</div>}
+                        <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex justify-center gap-2">
+                            {loading ? <Loader2 className="animate-spin" /> : <Lock className="h-5 w-5" />}
+                            Salvar Senha
                         </button>
                     </form>
                 </div>
-
-                {/* Footer */}
-                <p className="text-center text-gray-500 text-sm mt-6">
-                    © 2026 Trax Prediction. Todos os direitos reservados.
-                </p>
             </div>
         </div>
     )
@@ -331,14 +260,7 @@ function SetupPasswordForm() {
 
 export default function SetupPasswordPage() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-                <div className="text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
-                    <p className="text-white text-lg">Carregando...</p>
-                </div>
-            </div>
-        }>
+        <Suspense fallback={<div className="text-white text-center p-10">Carregando...</div>}>
             <SetupPasswordForm />
         </Suspense>
     )
