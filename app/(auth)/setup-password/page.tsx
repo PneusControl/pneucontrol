@@ -86,6 +86,16 @@ function SetupPasswordForm() {
             })
 
             if (updateError) {
+                // Tratar caso especial: senha já foi definida antes
+                if (updateError.message.includes('different from the old password') ||
+                    updateError.message.includes('same as the old password')) {
+                    setError('Esta senha já foi usada anteriormente. Você já configurou sua senha? Tente fazer login.')
+                    // Redirecionar para login após 3 segundos
+                    setTimeout(() => {
+                        router.push('/login')
+                    }, 3000)
+                    return
+                }
                 throw updateError
             }
 
