@@ -2,9 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Instala dependencias
+# Instala dependencias com retry para evitar falhas de rede
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --retries 3 --timeout 60 -r requirements.txt
 
 # Copia codigo
 COPY . .
