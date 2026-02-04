@@ -48,22 +48,40 @@ function SetupPasswordForm() {
                 // Se temos tokens na URL (magic link), criar sessão
                 if (accessToken && refreshToken) {
                     console.log('Tokens encontrados na URL, criando sessão...')
-                    const { data, error: sessionError } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken
-                    })
 
-                    if (sessionError) {
-                        console.error('Erro ao criar sessão:', sessionError)
-                        setTokenError('Link expirado ou inválido. Por favor, solicite um novo convite.')
-                        setVerifying(false)
-                        return
+                    // Wrapper com timeout para evitar hang
+                    const setSessionWithTimeout = async () => {
+                        return Promise.race([
+                            supabase.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: refreshToken
+                            }),
+                            new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('Timeout ao criar sessão')), 10000)
+                            )
+                        ])
                     }
 
-                    if (data.session) {
-                        console.log('Sessão criada com sucesso para:', data.session.user.email)
-                        // Limpar o hash da URL para segurança
-                        window.history.replaceState(null, '', window.location.pathname)
+                    try {
+                        const { data, error: sessionError } = await setSessionWithTimeout() as any
+
+                        if (sessionError) {
+                            console.error('Erro ao criar sessão:', sessionError)
+                            setTokenError('Link expirado ou inválido. Por favor, solicite um novo convite.')
+                            setVerifying(false)
+                            return
+                        }
+
+                        if (data?.session) {
+                            console.log('Sessão criada com sucesso para:', data.session.user.email)
+                            // Limpar o hash da URL para segurança
+                            window.history.replaceState(null, '', window.location.pathname)
+                        }
+                    } catch (timeoutErr) {
+                        console.error('Timeout na criação de sessão:', timeoutErr)
+                        setTokenError('O servidor demorou muito para responder. Tente atualizar a página.')
+                        setVerifying(false)
+                        return
                     }
                 } else {
                     // Verificar se já existe uma sessão ativa
