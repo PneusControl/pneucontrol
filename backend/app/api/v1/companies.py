@@ -229,14 +229,25 @@ async def update_company(company_id: str, company: CompanyCreate, supabase: Clie
 @router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_company(company_id: str, supabase: Client = Depends(get_supabase)):
     """Exclui uma empresa e todos os dados relacionados (incluindo usuarios)."""
+    import httpx
+    
     print(f"DEBUG: Iniciando exclusao da empresa {company_id}...")
     
     try:
+        supabase_url = settings.SUPABASE_URL
+        service_key = settings.SUPABASE_SERVICE_KEY
+        
+        headers = {
+            "Authorization": f"Bearer {service_key}",
+            "Content-Type": "application/json",
+            "apikey": service_key
+        }
+        
         # 1. Buscar os IDs dos usuarios vinculados para remover do Auth
-        # Isso precisa ser feito ANTES de deletar o tenant se o cascade for muito rapido,
-        # ou logo depois se ja tivermos os IDs.
+        # Isso precisa ser feito ANTES de deletar o tenant
         users_res = supabase.table("users").select("id").eq("tenant_id", company_id).execute()
         user_ids = [u["id"] for u in users_res.data]
+        print(f"DEBUG: Encontrados {len(user_ids)} usuarios para limpar do Auth: {user_ids}")
         
         # 2. Excluir o Tenant (o cascade limpara as tabelas public.*)
         result = supabase.table("tenants").delete().eq("id", company_id).execute()
@@ -245,24 +256,36 @@ async def delete_company(company_id: str, supabase: Client = Depends(get_supabas
             print(f"DEBUG ERROR: Empresa {company_id} nao encontrada ou sem permissao.")
             raise HTTPException(status_code=404, detail="Empresa não encontrada ou permissão negada")
 
-        # 3. Limpeza do Supabase Auth (auth.users)
-        # Importante: auth.admin.delete_user remove permanentemente
-        for uid in user_ids:
-            try:
-                print(f"DEBUG: Removendo usuario {uid} do Auth...")
-                supabase.auth.admin.delete_user(uid)
-            except Exception as auth_err:
-                print(f"WARNING: Falha ao remover usuario {uid} do Auth: {str(auth_err)}")
+        # 3. Limpeza do Supabase Auth via Edge Function (mais confiavel)
+        async with httpx.AsyncClient() as client:
+            for uid in user_ids:
+                try:
+                    print(f"DEBUG: Removendo usuario {uid} do Auth via Edge Function...")
+                    delete_res = await client.post(
+                        f"{supabase_url}/functions/v1/delete-user",
+                        headers=headers,
+                        json={"user_id": uid},
+                        timeout=30.0
+                    )
+                    print(f"DEBUG: Resposta delete-user para {uid}: {delete_res.status_code} - {delete_res.text}")
+                    
+                    if delete_res.status_code != 200:
+                        print(f"WARNING: Falha ao remover usuario {uid} do Auth: {delete_res.text}")
+                except Exception as auth_err:
+                    print(f"WARNING: Erro ao chamar delete-user para {uid}: {str(auth_err)}")
 
         print(f"DEBUG: Empresa {company_id} e seus {len(user_ids)} usuarios excluidos com sucesso.")
         
     except Exception as e:
         print(f"Erro critico na exclusao da empresa: {str(e)}")
+        import traceback
+        traceback.print_exc()
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=f"Erro interno ao excluir empresa: {str(e)}")
     
     return None
+
 
 @router.post("/companies/{company_id}/resend-email")
 async def resend_company_onboarding(company_id: str, background_tasks: BackgroundTasks, supabase: Client = Depends(get_supabase)):
