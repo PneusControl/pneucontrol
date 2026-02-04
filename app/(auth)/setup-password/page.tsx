@@ -25,31 +25,65 @@ function SetupPasswordForm() {
     useEffect(() => {
         const handleAuthCallback = async () => {
             try {
-                // O Supabase Auth automaticamente processa o token da URL
-                // quando o usuario clica no link de convite
-                const { data: { session }, error } = await supabase.auth.getSession()
+                // Supabase envia o token via hash fragment (#access_token=...)
+                // Precisamos verificar se há token na URL
+                const hashParams = new URLSearchParams(window.location.hash.substring(1))
+                const accessToken = hashParams.get('access_token')
+                const refreshToken = hashParams.get('refresh_token')
+                const type = hashParams.get('type')
 
-                if (error) {
-                    console.error('Erro ao verificar sessão:', error)
-                    setTokenError(error.message)
-                    setVerifying(false)
-                    return
-                }
+                console.log('Setup Password - URL type:', type, 'Has access_token:', !!accessToken)
 
-                // Verificar se há erro na URL (token expirado, etc)
-                const errorParam = searchParams.get('error')
-                const errorDescription = searchParams.get('error_description')
+                // Verificar se há erro na URL
+                const errorParam = hashParams.get('error') || searchParams.get('error')
+                const errorDescription = hashParams.get('error_description') || searchParams.get('error_description')
 
                 if (errorParam) {
                     console.error('Erro na URL:', errorParam, errorDescription)
-                    setTokenError(errorDescription || 'Link inválido ou expirado')
+                    setTokenError(errorDescription || 'Link inválido ou expirado. Por favor, solicite um novo convite.')
                     setVerifying(false)
                     return
                 }
 
-                // Se já tem sessão, pode prosseguir
-                if (session) {
-                    console.log('Sessão encontrada, pronto para definir senha')
+                // Se temos tokens na URL (magic link), criar sessão
+                if (accessToken && refreshToken) {
+                    console.log('Tokens encontrados na URL, criando sessão...')
+                    const { data, error: sessionError } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    })
+
+                    if (sessionError) {
+                        console.error('Erro ao criar sessão:', sessionError)
+                        setTokenError('Link expirado ou inválido. Por favor, solicite um novo convite.')
+                        setVerifying(false)
+                        return
+                    }
+
+                    if (data.session) {
+                        console.log('Sessão criada com sucesso para:', data.session.user.email)
+                        // Limpar o hash da URL para segurança
+                        window.history.replaceState(null, '', window.location.pathname)
+                    }
+                } else {
+                    // Verificar se já existe uma sessão ativa
+                    const { data: { session }, error } = await supabase.auth.getSession()
+
+                    if (error) {
+                        console.error('Erro ao verificar sessão:', error)
+                        setTokenError('Erro ao verificar sessão. Tente acessar o link do email novamente.')
+                        setVerifying(false)
+                        return
+                    }
+
+                    if (!session) {
+                        console.log('Nenhuma sessão encontrada')
+                        setTokenError('Sessão não encontrada. Acesse o link enviado por email ou solicite um novo convite.')
+                        setVerifying(false)
+                        return
+                    }
+
+                    console.log('Sessão ativa encontrada:', session.user.email)
                 }
 
                 setVerifying(false)
