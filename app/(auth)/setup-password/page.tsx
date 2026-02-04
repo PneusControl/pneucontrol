@@ -29,91 +29,87 @@ function SetupPasswordForm() {
         effectRan.current = true
 
         const handleAuthCallback = async () => {
-            // ... existing logic ...
             try {
-                // Supabase envia o token via hash fragment (#access_token=...)
-                // Precisamos verificar se há token na URL
+                // 1. Tentar verificar sessão existente PRIMEIRO
+                // O Supabase Client pode já ter processado o hash automaticamente
+                const { data: { session: existingSession } } = await supabase.auth.getSession()
+
+                if (existingSession) {
+                    console.log('Sessão pré-existente detectada:', existingSession.user.email)
+                    setVerifying(false)
+                    return
+                }
+
+                // 2. Se não tem sessão, verificar Hash da URL
                 const hashParams = new URLSearchParams(window.location.hash.substring(1))
                 const accessToken = hashParams.get('access_token')
                 const refreshToken = hashParams.get('refresh_token')
                 const type = hashParams.get('type')
 
-                console.log('Setup Password - URL type:', type, 'Has access_token:', !!accessToken)
-
-                // Verificar se há erro na URL
+                // Verificar erros na URL
                 const errorParam = hashParams.get('error') || searchParams.get('error')
                 const errorDescription = hashParams.get('error_description') || searchParams.get('error_description')
 
                 if (errorParam) {
+                    // Ignora erro se a sessão mágica apareceu no meio tempo (auto processamento)
+                    const { data: { session: lastCheck } } = await supabase.auth.getSession()
+                    if (lastCheck) {
+                        console.log('Erro na URL ignorado pois sessão foi encontrada.')
+                        setVerifying(false)
+                        return
+                    }
+
                     console.error('Erro na URL:', errorParam, errorDescription)
-                    setTokenError(errorDescription || 'Link inválido ou expirado. Por favor, solicite um novo convite.')
+                    setTokenError(errorDescription || 'Link inválido ou expirado.')
                     setVerifying(false)
                     return
                 }
 
-                // Se temos tokens na URL (magic link), criar sessão
+                // 3. Tentar troca manual SOMENTE se tiver tokens E não tiver sessão
                 if (accessToken && refreshToken) {
-                    console.log('Tokens encontrados na URL, criando sessão...')
+                    console.log('Tokens na URL detectados, tentando troca manual...')
 
-                    // Wrapper com timeout para evitar hang
-                    const setSessionWithTimeout = async () => {
-                        return Promise.race([
-                            supabase.auth.setSession({
-                                access_token: accessToken,
-                                refresh_token: refreshToken
-                            }),
-                            new Promise((_, reject) =>
-                                setTimeout(() => reject(new Error('Timeout ao criar sessão')), 10000)
-                            )
-                        ])
-                    }
+                    const { data, error: sessionError } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    })
 
-                    try {
-                        const { data, error: sessionError } = await setSessionWithTimeout() as any
-
-                        if (sessionError) {
-                            console.error('Erro ao criar sessão:', sessionError)
-                            setTokenError('Link expirado ou inválido. Por favor, solicite um novo convite.')
+                    if (sessionError) {
+                        // Última tentativa: verificar se a sessão apareceu agora (race condition)
+                        const { data: { session: retrySession } } = await supabase.auth.getSession()
+                        if (retrySession) {
+                            console.log('Troca falhou mas sessão apareceu (race condition tratada).')
                             setVerifying(false)
                             return
                         }
 
-                        if (data?.session) {
-                            console.log('Sessão criada com sucesso para:', data.session.user.email)
-                            // Limpar o hash da URL para segurança
-                            window.history.replaceState(null, '', window.location.pathname)
-                        }
-                    } catch (timeoutErr) {
-                        console.error('Timeout na criação de sessão:', timeoutErr)
-                        setTokenError('O servidor demorou muito para responder. Tente atualizar a página.')
+                        console.error('Erro ao criar sessão:', sessionError)
+                        setTokenError('Link expirado. Se você já clicou antes, tente fazer LOGIN ou usar "Esqueci minha senha".')
                         setVerifying(false)
                         return
+                    }
+
+                    if (data?.session) {
+                        console.log('Sessão criada manualmente com sucesso.')
+                        window.history.replaceState(null, '', window.location.pathname)
                     }
                 } else {
-                    // Verificar se já existe uma sessão ativa
-                    const { data: { session }, error } = await supabase.auth.getSession()
-
-                    if (error) {
-                        console.error('Erro ao verificar sessão:', error)
-                        setTokenError('Erro ao verificar sessão. Tente acessar o link do email novamente.')
+                    // Sem sessão e sem tokens, verificar uma última vez
+                    const { data: { session: finalCheck } } = await supabase.auth.getSession()
+                    if (finalCheck) {
+                        console.log('Sessão encontrada na checagem final.')
                         setVerifying(false)
                         return
                     }
 
-                    if (!session) {
-                        console.log('Nenhuma sessão encontrada')
-                        setTokenError('Sessão não encontrada. Acesse o link enviado por email ou solicite um novo convite.')
-                        setVerifying(false)
-                        return
-                    }
-
-                    console.log('Sessão ativa encontrada:', session.user.email)
+                    console.log('Nenhuma sessão e nenhum token encontrado.')
+                    setTokenError('Sessão não encontrada. Acesse o link enviado por email.')
                 }
 
                 setVerifying(false)
             } catch (err) {
                 console.error('Erro inesperado:', err)
-                setTokenError('Erro ao processar o link de convite')
+                setTokenError('Erro ao processar convite.')
                 setVerifying(false)
             }
         }
