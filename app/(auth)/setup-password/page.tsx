@@ -44,14 +44,34 @@ function SetupPasswordForm() {
 
                 if (existingSession) {
                     console.log('Sessão encontrada (Cookie). Validando usuário...')
-                    // Validação CRÍTICA: Verificar se o usuário ainda existe no banco
-                    // Isso evita o erro "User from sub claim in JWT does not exist" se a empresa foi recriada
                     const { error: userError } = await supabase.auth.getUser()
 
                     if (userError) {
-                        console.warn('Sessão fantasma detectada (usuário deletado?). Limpando...', userError)
-                        await supabase.auth.signOut()
-                        // Segue o fluxo para processar o Hash normalmente abaixo...
+                        console.warn('Sessão fantasma detectada. Executando limpeza forçada...')
+
+                        // 1. Tentar Logout normal (pode falhar com 403)
+                        await supabase.auth.signOut().catch(() => { })
+
+                        // 2. Limpeza Nuclear do LocalStorage
+                        // O prefixo padrão é 'sb-' + PROJECT_ID + '-auth-token'
+                        const projectID = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('.')[0].split('//')[1] || 'fpdsfepxlcltaoaozvsg'
+                        const storageKey = `sb-${projectID}-auth-token`
+
+                        // Tenta limpar chaves conhecidas
+                        localStorage.removeItem(storageKey)
+                        localStorage.removeItem('supabase.auth.token')
+
+                        // Limpa qualquer chave que comece com sb- e termine com -auth-token
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i)
+                            if (key?.startsWith('sb-') && key?.endsWith('-auth-token')) {
+                                localStorage.removeItem(key)
+                            }
+                        }
+
+                        console.log('Limpeza local concluída. Recarregando para aplicar...')
+                        window.location.reload() // Reload necessário para limpar memória do Client Supabase
+                        return
                     } else {
                         console.log('Sessão válida confirmada.')
                         setVerifying(false)
