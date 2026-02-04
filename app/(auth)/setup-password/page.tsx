@@ -10,14 +10,7 @@ function SetupPasswordForm() {
     const searchParams = useSearchParams()
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            auth: {
-                flowType: 'implicit',
-                detectSessionInUrl: false,
-                persistSession: true,
-            }
-        }
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
     const [password, setPassword] = useState('')
@@ -28,7 +21,9 @@ function SetupPasswordForm() {
     const [success, setSuccess] = useState(false)
     const [verifying, setVerifying] = useState(true)
     const [tokenError, setTokenError] = useState<string | null>(null)
-    const [showManualReset, setShowManualReset] = useState(false)
+
+    // Armazena o token cru para uso direto via Fetch (Bypass no Client Supabase)
+    const [directAccessToken, setDirectAccessToken] = useState<string | null>(null)
 
     const effectRan = useRef(false)
 
@@ -38,166 +33,116 @@ function SetupPasswordForm() {
 
         const handleAuthCallback = async () => {
             try {
-                // Listener de segurança: se a sessão mudar por qualquer motivo, destrava
-                const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-                    if (event === 'SIGNED_IN' && session) {
-                        console.log('Evento SIGNED_IN detectado!')
-                        setVerifying(false)
-                    }
-                })
-
-                // 1. Tentar verificar sessão existente PRIMEIRO
+                // 1. Limpeza preventiva de sessões Zumbis
                 const { data: { session: existingSession } } = await supabase.auth.getSession()
-
                 if (existingSession) {
-                    console.log('Sessão encontrada (Cookie). Validando usuário...')
                     const { error: userError } = await supabase.auth.getUser()
-
                     if (userError) {
-                        console.warn('Sessão fantasma detectada. Executando limpeza forçada...')
-
-                        // 1. Tentar Logout normal (pode falhar com 403)
-                        await supabase.auth.signOut().catch(() => { })
-
-                        // 2. Limpeza Nuclear do LocalStorage
-                        // O prefixo padrão é 'sb-' + PROJECT_ID + '-auth-token'
-                        const projectID = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('.')[0].split('//')[1] || 'fpdsfepxlcltaoaozvsg'
-                        const storageKey = `sb-${projectID}-auth-token`
-
-                        // Tenta limpar chaves conhecidas
-                        localStorage.removeItem(storageKey)
-                        localStorage.removeItem('supabase.auth.token')
-
-                        // Limpa qualquer chave que comece com sb- e termine com -auth-token
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const key = localStorage.key(i)
-                            if (key?.startsWith('sb-') && key?.endsWith('-auth-token')) {
-                                localStorage.removeItem(key)
-                            }
-                        }
-
-                        console.log('Limpeza local concluída. Recarregando para aplicar...')
-                        window.location.reload() // Reload necessário para limpar memória do Client Supabase
-                        return
-                    } else {
-                        console.log('Sessão válida confirmada.')
-                        setVerifying(false)
+                        console.warn('Sessão zumbi detectada. Limpando...')
+                        localStorage.clear() // Nuclear
+                        window.location.reload()
                         return
                     }
-                }
-
-                // 2. Hash Params (Segue normal se não houve return acima)
-                const hashParams = new URLSearchParams(window.location.hash.substring(1))
-                const accessToken = hashParams.get('access_token')
-                const refreshToken = hashParams.get('refresh_token')
-
-                const errorParam = hashParams.get('error') || searchParams.get('error')
-                const errorDescription = hashParams.get('error_description') || searchParams.get('error_description')
-
-                if (errorParam) {
-                    const { data: { session: lastCheck } } = await supabase.auth.getSession()
-                    if (lastCheck) { setVerifying(false); return }
-
-                    console.error('Erro na URL:', errorParam, errorDescription)
-                    setTokenError(errorDescription || 'Link inválido ou expirado.')
+                    // Se sessão válida, ótimo, nem precisa do token
+                    console.log('Sessão válida já existe.')
                     setVerifying(false)
                     return
                 }
 
-                // 3. Troca Manual com Timeout e Fallback
-                if (accessToken && refreshToken) {
-                    console.log('Tokens na URL detectados, tentando troca manual...')
+                // 2. Extrair Token da URL
+                const hashParams = new URLSearchParams(window.location.hash.substring(1))
+                const accessToken = hashParams.get('access_token')
+                const errorParam = hashParams.get('error')
+                const errorDescription = hashParams.get('error_description')
 
-                    try {
-                        // Promise Race com Timeout de 8s
-                        const { data, error: sessionError } = await Promise.race([
-                            supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
-                            new Promise<any>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000))
-                        ])
+                if (errorParam) {
+                    setTokenError(errorDescription || 'Link inválido.')
+                    setVerifying(false)
+                    return
+                }
 
-                        if (sessionError) {
-                            const { data: { session: retrySession } } = await supabase.auth.getSession()
-                            if (retrySession) { setVerifying(false); return }
-
-                            console.error('Erro ao criar sessão:', sessionError)
-                            setTokenError('Link expirado. Use o botão abaixo para redefinir sua senha.')
-                            setShowManualReset(true)
-                            setVerifying(false)
-                            return
-                        }
-
-                        if (data?.session) {
-                            console.log('Sessão criada manualmente com sucesso.')
-                            window.history.replaceState(null, '', window.location.pathname)
-                            setVerifying(false)
-                        }
-                    } catch (timeoutErr: any) {
-                        console.error('Timeout ou Erro:', timeoutErr)
-                        // Em caso de timeout, verificamos uma ultima vez e mostramos fallback
-                        const { data: { session: finalTimeoutCheck } } = await supabase.auth.getSession()
-                        if (finalTimeoutCheck) { setVerifying(false); return }
-
-                        setTokenError('O servidor demorou para responder. Tente redefinir manualmente.')
-                        setShowManualReset(true)
-                        setVerifying(false)
-                    }
+                if (accessToken) {
+                    // ESTRATÉGIA BYPASS: NÃO chamamos setSession()
+                    // Apenas guardamos o token para usar no submit do formulário via fetch puro.
+                    // Isso evita 100% dos timeouts do cliente JS.
+                    console.log('Token detectado. Modo Direct Fetch ativado.')
+                    setDirectAccessToken(accessToken)
+                    setVerifying(false)
                 } else {
-                    const { data: { session: finalCheck } } = await supabase.auth.getSession()
-                    if (finalCheck) { setVerifying(false); return }
-
-                    setTokenError('Link incompleto. Acesse novamente pelo email.')
+                    setTokenError('Link incompleto ou expirado.')
                     setVerifying(false)
                 }
 
-                subscription?.unsubscribe()
-
             } catch (err) {
-                console.error('Erro geral:', err)
-                setTokenError('Erro ao processar. Tente novamente.')
+                console.error('Erro no setup:', err)
+                setTokenError('Erro interno.')
                 setVerifying(false)
             }
         }
 
         handleAuthCallback()
-    }, [supabase, searchParams])
+    }, [supabase])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
-        if (password.length < 8) { setError('A senha deve ter pelo menos 8 caracteres'); return }
-        if (password !== confirmPassword) { setError('As senhas não coincidem'); return }
+
+        if (password.length < 8) { setError('Mínimo 8 caracteres'); return }
+        if (password !== confirmPassword) { setError('Senhas não conferem'); return }
 
         setLoading(true)
+
         try {
-            const { error: updateError } = await supabase.auth.updateUser({ password: password })
-            if (updateError) {
-                if (updateError.message.includes('different') || updateError.message.includes('old password')) {
-                    setError('Senha já utilizada. Tente fazer login.')
-                    setTimeout(() => router.push('/login'), 3000)
-                    return
+            // Se tivermos sessão ativa (cookie), usamos o cliente normal
+            const { data: { session } } = await supabase.auth.getSession()
+
+            if (session) {
+                const { error: updateError } = await supabase.auth.updateUser({ password: password })
+                if (updateError) throw updateError
+            } else if (directAccessToken) {
+                // BYPASS MODO: Fetch direto na API do Supabase Auth
+                // Endpoint: PUT /auth/v1/user
+                const authUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`
+
+                const response = await fetch(authUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                        'Authorization': `Bearer ${directAccessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.msg || errorData.message || 'Erro ao definir senha (API).')
                 }
-                throw updateError
+            } else {
+                throw new Error('Sessão não encontrada e Token ausente.')
             }
+
             setSuccess(true)
-            setTimeout(() => router.push('/dashboard'), 2000)
+            setTimeout(() => router.push('/login'), 2000)
+
         } catch (err: any) {
-            setError(err.message || 'Erro ao definir senha.')
+            console.error('Erro no submit:', err)
+            // Se der erro de "Same Password", tratamos amigavelmente
+            if (err.message?.includes('same') || err.message?.includes('different')) {
+                setError('Senha já utilizada. Redirecionando para login...')
+                setTimeout(() => router.push('/login'), 2000)
+            } else {
+                setError(err.message || 'Erro ao salvar senha.')
+            }
         } finally {
             setLoading(false)
         }
     }
 
-    const handleManualReset = () => {
-        router.push('/login?reset=true') // Redireciona para login onde user pode clicar em Esqueci Senha
-    }
-
     if (verifying) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-                <div className="text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
-                    <p className="text-white text-lg">Validando seu acesso...</p>
-                </div>
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
             </div>
         )
     }
@@ -207,30 +152,15 @@ function SetupPasswordForm() {
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
                 <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center">
                     <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white mb-2">Atenção</h1>
+                    <h1 className="text-2xl font-bold text-white mb-2">Link Expirado</h1>
                     <p className="text-gray-300 mb-6">{tokenError}</p>
-
-                    {showManualReset ? (
-                        <div className="space-y-4">
-                            <p className="text-sm text-gray-400">
-                                Como o link de convite expirou ou falhou, você pode solicitar um novo link de redefinição de senha seguro.
-                            </p>
-                            <button
-                                onClick={() => router.push('/login')}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                            >
-                                Ir para Login e Redefinir Senha
-                                <ArrowRight className="h-4 w-4" />
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => router.push('/login')}
-                            className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-                        >
-                            Voltar para Login
-                        </button>
-                    )}
+                    <button
+                        onClick={() => router.push('/login')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    >
+                        Ir para Login e Redefinir Senha
+                        <ArrowRight className="h-4 w-4" />
+                    </button>
                 </div>
             </div>
         )
@@ -241,8 +171,8 @@ function SetupPasswordForm() {
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
                 <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center">
                     <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white mb-2">Sucesso!</h1>
-                    <p className="text-gray-300">Redirecionando...</p>
+                    <h1 className="text-2xl font-bold text-white mb-2">Senha Definida!</h1>
+                    <p className="text-gray-300">Faça login para continuar.</p>
                 </div>
             </div>
         )
