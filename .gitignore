@@ -38,7 +38,8 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
-
+*.md
+*.markdown
 # Android/iOS (Capacitor builds)
 android/
 ios/
