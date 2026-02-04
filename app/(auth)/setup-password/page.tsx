@@ -10,7 +10,14 @@ function SetupPasswordForm() {
     const searchParams = useSearchParams()
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            auth: {
+                flowType: 'implicit',
+                detectSessionInUrl: false,
+                persistSession: true,
+            }
+        }
     )
 
     const [password, setPassword] = useState('')
@@ -38,15 +45,17 @@ function SetupPasswordForm() {
                 if (existingSession) {
                     const { error: userError } = await supabase.auth.getUser()
                     if (userError) {
-                        console.warn('Sessão zumbi detectada. Limpando...')
-                        localStorage.clear() // Nuclear
-                        window.location.reload()
+                        console.warn('Sessão zumbi detectada. Limpando armazenamento...')
+                        localStorage.clear() // Remove lixo
+                        // NÃO recarregar a página para evitar loops. 
+                        // Como usamos Direct Fetch, a sessão suja não atrapalha o submit.
+                        // Apenas garantimos que o verify não pare aqui.
+                    } else {
+                        // Se sessão válida, ótimo.
+                        console.log('Sessão válida já existe.')
+                        setVerifying(false)
                         return
                     }
-                    // Se sessão válida, ótimo, nem precisa do token
-                    console.log('Sessão válida já existe.')
-                    setVerifying(false)
-                    return
                 }
 
                 // 2. Extrair Token da URL
@@ -62,9 +71,6 @@ function SetupPasswordForm() {
                 }
 
                 if (accessToken) {
-                    // ESTRATÉGIA BYPASS: NÃO chamamos setSession()
-                    // Apenas guardamos o token para usar no submit do formulário via fetch puro.
-                    // Isso evita 100% dos timeouts do cliente JS.
                     console.log('Token detectado. Modo Direct Fetch ativado.')
                     setDirectAccessToken(accessToken)
                     setVerifying(false)
@@ -93,14 +99,12 @@ function SetupPasswordForm() {
         setLoading(true)
 
         try {
-            // Se tivermos sessão ativa (cookie), usamos o cliente normal
             const { data: { session } } = await supabase.auth.getSession()
 
             if (session) {
                 const { error: updateError } = await supabase.auth.updateUser({ password: password })
                 if (updateError) throw updateError
             } else if (directAccessToken) {
-                // BYPASS MODO: Fetch direto na API do Supabase Auth
                 // Endpoint: PUT /auth/v1/user
                 const authUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`
 
@@ -126,7 +130,6 @@ function SetupPasswordForm() {
             setTimeout(() => router.push('/login'), 2000)
 
         } catch (err: any) {
-            console.error('Erro no submit:', err)
             // Se der erro de "Same Password", tratamos amigavelmente
             if (err.message?.includes('same') || err.message?.includes('different')) {
                 setError('Senha já utilizada. Redirecionando para login...')
