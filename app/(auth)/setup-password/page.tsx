@@ -43,12 +43,23 @@ function SetupPasswordForm() {
                 const { data: { session: existingSession } } = await supabase.auth.getSession()
 
                 if (existingSession) {
-                    console.log('Sessão pré-existente detectada:', existingSession.user.email)
-                    setVerifying(false)
-                    return
+                    console.log('Sessão encontrada (Cookie). Validando usuário...')
+                    // Validação CRÍTICA: Verificar se o usuário ainda existe no banco
+                    // Isso evita o erro "User from sub claim in JWT does not exist" se a empresa foi recriada
+                    const { error: userError } = await supabase.auth.getUser()
+
+                    if (userError) {
+                        console.warn('Sessão fantasma detectada (usuário deletado?). Limpando...', userError)
+                        await supabase.auth.signOut()
+                        // Segue o fluxo para processar o Hash normalmente abaixo...
+                    } else {
+                        console.log('Sessão válida confirmada.')
+                        setVerifying(false)
+                        return
+                    }
                 }
 
-                // 2. Hash Params
+                // 2. Hash Params (Segue normal se não houve return acima)
                 const hashParams = new URLSearchParams(window.location.hash.substring(1))
                 const accessToken = hashParams.get('access_token')
                 const refreshToken = hashParams.get('refresh_token')
