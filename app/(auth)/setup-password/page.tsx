@@ -8,17 +8,10 @@ import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowRight } from
 function SetupPasswordForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            auth: {
-                flowType: 'implicit',
-                detectSessionInUrl: false,
-                persistSession: true,
-            }
-        }
-    )
+
+    // Cliente apenas para ler config, não usado para auth ativa nesta página
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
@@ -29,7 +22,6 @@ function SetupPasswordForm() {
     const [verifying, setVerifying] = useState(true)
     const [tokenError, setTokenError] = useState<string | null>(null)
 
-    // Armazena o token cru para uso direto via Fetch (Bypass no Client Supabase)
     const [directAccessToken, setDirectAccessToken] = useState<string | null>(null)
 
     const effectRan = useRef(false)
@@ -38,27 +30,21 @@ function SetupPasswordForm() {
         if (effectRan.current) return
         effectRan.current = true
 
+        // Lógica simplificada: Apenas lê a URL. Ignora sessão existente/zumbi.
         const handleAuthCallback = async () => {
             try {
-                // 1. Limpeza preventiva de sessões Zumbis
-                const { data: { session: existingSession } } = await supabase.auth.getSession()
-                if (existingSession) {
-                    const { error: userError } = await supabase.auth.getUser()
-                    if (userError) {
-                        console.warn('Sessão zumbi detectada. Limpando armazenamento...')
-                        localStorage.clear() // Remove lixo
-                        // NÃO recarregar a página para evitar loops. 
-                        // Como usamos Direct Fetch, a sessão suja não atrapalha o submit.
-                        // Apenas garantimos que o verify não pare aqui.
-                    } else {
-                        // Se sessão válida, ótimo.
-                        console.log('Sessão válida já existe.')
-                        setVerifying(false)
-                        return
-                    }
+                // Tenta limpar lixo antigo silenciosamente, mas sem depender disso
+                if (typeof window !== 'undefined') {
+                    // Limpeza "best effort" das chaves do supabase
+                    try {
+                        Object.keys(localStorage).forEach(key => {
+                            if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                                localStorage.removeItem(key)
+                            }
+                        })
+                    } catch (e) { /* ignore */ }
                 }
 
-                // 2. Extrair Token da URL
                 const hashParams = new URLSearchParams(window.location.hash.substring(1))
                 const accessToken = hashParams.get('access_token')
                 const errorParam = hashParams.get('error')
@@ -71,7 +57,7 @@ function SetupPasswordForm() {
                 }
 
                 if (accessToken) {
-                    console.log('Token detectado. Modo Direct Fetch ativado.')
+                    console.log('Token encontrado. Pronto para definir senha.')
                     setDirectAccessToken(accessToken)
                     setVerifying(false)
                 } else {
@@ -80,14 +66,14 @@ function SetupPasswordForm() {
                 }
 
             } catch (err) {
-                console.error('Erro no setup:', err)
+                console.error('Erro ao ler URL:', err)
                 setTokenError('Erro interno.')
                 setVerifying(false)
             }
         }
 
         handleAuthCallback()
-    }, [supabase])
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -99,41 +85,39 @@ function SetupPasswordForm() {
         setLoading(true)
 
         try {
-            const { data: { session } } = await supabase.auth.getSession()
+            if (!directAccessToken) {
+                throw new Error('Token de autorização perdido. Recarregue a página.')
+            }
 
-            if (session) {
-                const { error: updateError } = await supabase.auth.updateUser({ password: password })
-                if (updateError) throw updateError
-            } else if (directAccessToken) {
-                // Endpoint: PUT /auth/v1/user
-                const authUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`
+            // Fetch direto na API do Supabase Auth
+            const authUrl = `${supabaseUrl}/auth/v1/user`
 
-                const response = await fetch(authUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                        'Authorization': `Bearer ${directAccessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ password: password })
-                })
+            const response = await fetch(authUrl, {
+                method: 'PUT',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${directAccessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ password: password })
+            })
 
-                if (!response.ok) {
-                    const errorData = await response.json()
-                    throw new Error(errorData.msg || errorData.message || 'Erro ao definir senha (API).')
-                }
-            } else {
-                throw new Error('Sessão não encontrada e Token ausente.')
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.msg || errorData.message || 'Erro ao definir senha (API).')
             }
 
             setSuccess(true)
-            setTimeout(() => router.push('/login'), 2000)
+            // Limpa URL e redireciona
+            setTimeout(() => {
+                window.location.href = '/login'
+            }, 2000)
 
         } catch (err: any) {
-            // Se der erro de "Same Password", tratamos amigavelmente
+            console.error('Erro no submit:', err)
             if (err.message?.includes('same') || err.message?.includes('different')) {
-                setError('Senha já utilizada. Redirecionando para login...')
-                setTimeout(() => router.push('/login'), 2000)
+                setError('Senha já utilizada. Redirecionando...')
+                setTimeout(() => window.location.href = '/login', 2000)
             } else {
                 setError(err.message || 'Erro ao salvar senha.')
             }
