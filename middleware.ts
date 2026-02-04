@@ -33,27 +33,44 @@ export async function middleware(request: NextRequest) {
 
     const { data: { session } } = await supabase.auth.getSession()
 
-    const isAuthPage = request.nextUrl.pathname.startsWith('/login')
-    const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard')
-    const isRootPage = request.nextUrl.pathname === '/'
+    const pathname = request.nextUrl.pathname
+    const isAuthPage = pathname.startsWith('/login')
+    const isDashboardPage = pathname.startsWith('/dashboard')
+    const isSystemPage = pathname.startsWith('/system')
+    const isSetupPage = pathname.startsWith('/setup-password')
+    const isRootPage = pathname === '/'
 
-    // 1. Se estiver logado e tentar acessar root ou login, vai para dashboard
+    // Rotas que não precisam de autenticação
+    if (isSetupPage) {
+        return response
+    }
+
+    // System admin pages - precisa de autenticação especial (verificada na página)
+    if (isSystemPage) {
+        if (!session) {
+            return NextResponse.redirect(new URL('/login', request.url))
+        }
+        return response
+    }
+
+    // Se estiver logado e tentar acessar root ou login, vai para dashboard
     if (session && (isRootPage || isAuthPage)) {
         return NextResponse.redirect(new URL('/dashboard/', request.url))
     }
 
-    // 2. Se NÃO estiver logado e tentar acessar dashboard, vai para login
+    // Se NÃO estiver logado e tentar acessar dashboard, vai para login
     if (!session && isDashboardPage) {
         return NextResponse.redirect(new URL('/login/', request.url))
     }
 
-    // 3. Se estiver em root e não logado, vai para login
+    // Se estiver em root e não logado, vai para login
     if (!session && isRootPage) {
         return NextResponse.redirect(new URL('/login/', request.url))
     }
 
     return response
 }
+
 
 export const config = {
     matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],

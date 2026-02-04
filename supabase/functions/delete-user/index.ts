@@ -6,9 +6,6 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// URL de produção hardcoded para garantir funcionamento
-const FRONTEND_URL = 'https://trax.app.br'
-
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -20,36 +17,25 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        const { email, tenant_id, full_name } = await req.json()
+        const { user_id } = await req.json()
 
-        console.log(`Creating invite for ${email} with redirect to ${FRONTEND_URL}/setup-password`)
+        if (!user_id) {
+            throw new Error('user_id is required')
+        }
 
-        // Criar convite de usuario admin
-        const { data, error } = await supabaseClient.auth.admin.generateLink({
-            type: 'invite',
-            email: email,
-            options: {
-                data: {
-                    full_name,
-                    tenant_id,
-                    role: 'admin'
-                },
-                redirectTo: `${FRONTEND_URL}/setup-password`,
-            }
-        })
+        console.log(`Deleting user ${user_id} from auth.users...`)
+
+        const { error } = await supabaseClient.auth.admin.deleteUser(user_id)
 
         if (error) {
-            console.error('Error generating invite link:', error.message)
+            console.error('Error deleting user:', error.message)
             throw error
         }
 
-        console.log(`Invite link generated successfully for ${email}`)
+        console.log(`User ${user_id} deleted successfully`)
 
         return new Response(
-            JSON.stringify({
-                success: true,
-                invite_link: data.properties.action_link
-            }),
+            JSON.stringify({ success: true, deleted_user_id: user_id }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 200
@@ -57,7 +43,7 @@ serve(async (req) => {
         )
 
     } catch (error) {
-        console.error('Critical error in create-user:', error.message)
+        console.error('Critical error:', error.message)
         return new Response(
             JSON.stringify({ error: error.message }),
             {
