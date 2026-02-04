@@ -26,15 +26,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkIsSystemAdmin = async (email: string) => {
     try {
+      console.log('[AuthDebug] Verificando SysAdmin para:', email)
       const { data, error } = await supabase
         .from('system_admins')
         .select('id')
         .eq('email', email)
-        .single()
+        .maybeSingle() // Alterado de single() para evitar erro 406 se não existir
 
-      setIsSystemAdmin(!!data && !error)
+      const isSys = !!data
+      console.log('[AuthDebug] Resultado SysAdmin:', isSys, data, error)
+      setIsSystemAdmin(isSys)
     } catch (err) {
-      console.error('Erro ao verificar system_admin:', err)
+      console.error('[AuthDebug] Erro ao verificar system_admin:', err)
       setIsSystemAdmin(false)
     }
   }

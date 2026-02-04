@@ -13,6 +13,10 @@ import { useAuth } from '@/components/providers/AuthProvider'
 export function Sidebar() {
     const pathname = usePathname()
     const { user, signOut, isSystemAdmin, profile, loading } = useAuth()
+
+    // Debug
+    console.log('[SidebarDebug] isSystemAdmin:', isSystemAdmin, 'ProfileRole:', profile?.role, 'Email:', user?.email)
+
     const role = isSystemAdmin ? 'admin' : (profile?.role || 'operator')
 
     // Se for System Admin (Developer) ou Admin da Empresa, tem acesso total aos módulos core
