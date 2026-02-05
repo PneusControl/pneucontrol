@@ -24,6 +24,9 @@ export function Sidebar() {
         ['dashboard', 'fleet', 'tires', 'suppliers', 'invoices', 'reports', 'inspections', 'maintenance', 'predictions'] :
         (profile?.permissions || [])
 
+    // Debug detalhado para diagnóstico
+    console.log('[SidebarDebug] CALC role:', role, ' | permissions array:', permissions, ' | profile:', profile)
+
     if (loading) return null;
 
     const menuItems = [
