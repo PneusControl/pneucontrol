@@ -94,7 +94,8 @@ async def create_inspection(
             "tenant_id": request.tenant_id,
             "vehicle_id": request.vehicle_id,
             "inspector_id": request.inspector_id,
-            "odometer_km": request.odometer_km,
+            "km_hodometro": request.odometer_km,
+            "tipo": "rotina",
             "status": "concluida"
         }
         
@@ -132,7 +133,7 @@ async def create_inspection(
                 "sulco_interno": item.sulco_interno,
                 "sulco_central": item.sulco_central,
                 "sulco_externo": item.sulco_externo,
-                "sulco_medio": sulco_medio,
+                # sulco_medio é GENERATED - não incluir
                 "pressao_atual": item.pressao_atual,
                 "pressao_recomendada": item.pressao_recomendada,
                 "tem_avaria": item.tem_avaria,
