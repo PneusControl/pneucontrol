@@ -92,6 +92,42 @@ export default function SuppliersPage() {
         }
     }
 
+    const handleEditSupplier = (supplier: Supplier) => {
+        setFormData({
+            razao_social: supplier.name,
+            cnpj: supplier.cnpj,
+            nome_fantasia: '',
+            contato_nome: supplier.contact_name || '',
+            contato_email: supplier.email || '',
+            contato_telefone: supplier.phone || ''
+        })
+        setIsModalOpen(true)
+    }
+
+    const handleDeleteSupplier = async (supplierId: string, name: string) => {
+        if (!confirm(`Tem certeza que deseja excluir o fornecedor "${name}"? Esta ação não pode ser desfeita.`)) {
+            return
+        }
+
+        try {
+            setLoading(true)
+            const response = await fetch(`${API_BASE_URL}/api/v1/suppliers/${supplierId}`, {
+                method: 'DELETE'
+            })
+
+            if (response.ok) {
+                fetchSuppliers()
+            } else {
+                alert('Erro ao excluir fornecedor.')
+            }
+        } catch (err) {
+            console.error('Erro ao excluir:', err)
+            alert('Erro ao excluir fornecedor.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const filteredSuppliers = suppliers.filter(s =>
         s.name.toLowerCase().includes(search.toLowerCase()) ||
         s.cnpj.includes(search)
@@ -186,10 +222,18 @@ export default function SuppliersPage() {
                                 </td>
                                 <td className="px-10 py-8 text-right">
                                     <div className="flex justify-end gap-2">
-                                        <button className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm hover:shadow-indigo-100">
+                                        <button
+                                            onClick={() => handleEditSupplier(supplier)}
+                                            className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm hover:shadow-indigo-100"
+                                            title="Editar fornecedor"
+                                        >
                                             <Edit2 size={18} />
                                         </button>
-                                        <button className="p-3 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all shadow-sm hover:shadow-rose-100">
+                                        <button
+                                            onClick={() => handleDeleteSupplier(supplier.id, supplier.name)}
+                                            className="p-3 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all shadow-sm hover:shadow-rose-100"
+                                            title="Excluir fornecedor"
+                                        >
                                             <Trash2 size={18} />
                                         </button>
                                     </div>

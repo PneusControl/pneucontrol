@@ -139,6 +139,29 @@ export default function FleetPage() {
         }
     }
 
+    const handleDeleteVehicle = async (vehicleId: string, placa: string) => {
+        if (!confirm(`Tem certeza que deseja excluir o veículo ${placa}? Esta ação não pode ser desfeita.`)) {
+            return
+        }
+
+        try {
+            setLoading(true)
+            const { error } = await supabase
+                .from('vehicles')
+                .delete()
+                .eq('id', vehicleId)
+
+            if (error) throw error
+
+            fetchVehicles()
+        } catch (err) {
+            console.error('Erro ao excluir veículo:', err)
+            alert('Erro ao excluir veículo. Verifique se não há pneus vinculados.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const filteredVehicles = vehicles.filter(v =>
         v.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.modelo.toLowerCase().includes(searchTerm.toLowerCase())
@@ -185,6 +208,13 @@ export default function FleetPage() {
                                     className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all shadow-sm border border-gray-50"
                                 >
                                     <Edit2 size={18} />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteVehicle(v.id, v.placa)}
+                                    className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all shadow-sm border border-gray-50"
+                                    title="Excluir veículo"
+                                >
+                                    <Trash2 size={18} />
                                 </button>
                             </div>
 

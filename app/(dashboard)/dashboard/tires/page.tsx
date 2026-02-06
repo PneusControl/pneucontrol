@@ -107,6 +107,44 @@ export default function TiresPage() {
         }
     }
 
+    const handleEditTire = (tire: Tire) => {
+        setFormData({
+            numero_serie: tire.numero_serie,
+            marca: tire.marca,
+            modelo: tire.modelo,
+            medida: tire.medida,
+            tipo: 'radial',
+            sulco_inicial: tire.sulco_atual,
+            supplier_id: '',
+            valor_compra: tire.valor_compra || 0
+        })
+        setIsModalOpen(true)
+    }
+
+    const handleDeleteTire = async (tireId: string, serie: string) => {
+        if (!confirm(`Tem certeza que deseja excluir o pneu "${serie}"? Esta ação não pode ser desfeita.`)) {
+            return
+        }
+
+        try {
+            setLoading(true)
+            const response = await fetch(`${API_BASE_URL}/api/v1/tires/${tireId}`, {
+                method: 'DELETE'
+            })
+
+            if (response.ok) {
+                fetchData()
+            } else {
+                alert('Erro ao excluir pneu. Verifique se não há inspeções vinculadas.')
+            }
+        } catch (err) {
+            console.error('Erro ao excluir:', err)
+            alert('Erro ao excluir pneu.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const filteredTires = tires.filter(t =>
         t.numero_serie?.toLowerCase().includes(search.toLowerCase()) ||
         t.marca?.toLowerCase().includes(search.toLowerCase()) ||
@@ -233,10 +271,18 @@ export default function TiresPage() {
                                 </td>
                                 <td className="px-10 py-8 text-right">
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm">
+                                        <button
+                                            onClick={() => handleEditTire(tire)}
+                                            className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm"
+                                            title="Editar pneu"
+                                        >
                                             <Edit2 size={18} />
                                         </button>
-                                        <button className="p-3 text-gray-400 hover:text-rose-500 hover:bg-white rounded-xl transition-all shadow-sm">
+                                        <button
+                                            onClick={() => handleDeleteTire(tire.id, tire.numero_serie)}
+                                            className="p-3 text-gray-400 hover:text-rose-500 hover:bg-white rounded-xl transition-all shadow-sm"
+                                            title="Excluir pneu"
+                                        >
                                             <Trash2 size={18} />
                                         </button>
                                     </div>
