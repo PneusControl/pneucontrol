@@ -48,5 +48,35 @@ app.include_router(predictions.router, prefix="/api/v1", tags=["Predictions"])
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint para monitoramento."""
     return {"status": "healthy", "version": "3.0.0", "service": "pneu-control-api"}
+
+
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """Health check detalhado com verificação de dependências."""
+    from datetime import datetime
+    from app.core.config import get_settings
+    from supabase import create_client
+    
+    settings = get_settings()
+    checks = {
+        "api": "healthy",
+        "database": "unknown",
+        "timestamp": datetime.now().isoformat(),
+        "version": "3.0.0"
+    }
+    
+    try:
+        # Testar conexão com Supabase
+        supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+        result = supabase.table("tenants").select("id", count="exact").limit(1).execute()
+        checks["database"] = "healthy"
+        checks["tenants_count"] = result.count
+    except Exception as e:
+        checks["database"] = "unhealthy"
+        checks["database_error"] = str(e)
+    
+    overall_status = "healthy" if checks["database"] == "healthy" else "degraded"
+    return {"status": overall_status, **checks}
+
