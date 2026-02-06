@@ -23,10 +23,75 @@ interface AxleConfigBuilderProps {
 }
 
 export default function AxleConfigBuilder({ initialAxles, availableTires = [], onSave }: AxleConfigBuilderProps) {
+    // Templates predefinidos de configurações de eixos comuns
+    const axleTemplates: { [key: string]: { name: string, description: string, axles: Axle[] } } = {
+        '4x2': {
+            name: '4x2 (Toco)',
+            description: '1 eixo dianteiro + 1 eixo tração',
+            axles: [
+                { id: 1, type: 'dir', is_dual: false, tires: [null, null] },
+                { id: 2, type: 'traction', is_dual: true, tires: [null, null, null, null] }
+            ]
+        },
+        '6x2': {
+            name: '6x2 (Truck)',
+            description: '1 eixo dianteiro + 2 eixos (1 tração + 1 carga)',
+            axles: [
+                { id: 1, type: 'dir', is_dual: false, tires: [null, null] },
+                { id: 2, type: 'traction', is_dual: true, tires: [null, null, null, null] },
+                { id: 3, type: 'load', is_dual: true, tires: [null, null, null, null] }
+            ]
+        },
+        '6x4': {
+            name: '6x4 (Bi-Truck)',
+            description: '1 eixo dianteiro + 2 eixos tração',
+            axles: [
+                { id: 1, type: 'dir', is_dual: false, tires: [null, null] },
+                { id: 2, type: 'traction', is_dual: true, tires: [null, null, null, null] },
+                { id: 3, type: 'traction', is_dual: true, tires: [null, null, null, null] }
+            ]
+        },
+        'bitrem': {
+            name: 'Bitrem (7 eixos)',
+            description: 'Cavalo 6x4 + 2 semi-reboques de 2 eixos',
+            axles: [
+                { id: 1, type: 'dir', is_dual: false, tires: [null, null] },
+                { id: 2, type: 'traction', is_dual: true, tires: [null, null, null, null] },
+                { id: 3, type: 'traction', is_dual: true, tires: [null, null, null, null] },
+                { id: 4, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 5, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 6, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 7, type: 'load', is_dual: true, tires: [null, null, null, null] }
+            ]
+        },
+        'rodotrem': {
+            name: 'Rodotrem (9 eixos)',
+            description: 'Cavalo 6x4 + 2 semi-reboques de 3 eixos',
+            axles: [
+                { id: 1, type: 'dir', is_dual: false, tires: [null, null] },
+                { id: 2, type: 'traction', is_dual: true, tires: [null, null, null, null] },
+                { id: 3, type: 'traction', is_dual: true, tires: [null, null, null, null] },
+                { id: 4, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 5, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 6, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 7, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 8, type: 'load', is_dual: true, tires: [null, null, null, null] },
+                { id: 9, type: 'load', is_dual: true, tires: [null, null, null, null] }
+            ]
+        }
+    }
+
     const [axles, setAxles] = useState<Axle[]>(initialAxles || [
         { id: 1, type: 'dir', is_dual: false, tires: [null, null] }
     ])
     const [selecting, setSelecting] = useState<{ axleId: number, index: number } | null>(null)
+
+    const applyTemplate = (templateKey: string) => {
+        const template = axleTemplates[templateKey]
+        if (template) {
+            setAxles(template.axles.map(axle => ({ ...axle, tires: axle.tires.map(() => null) })))
+        }
+    }
 
     const addAxle = () => {
         const nextId = axles.length + 1
@@ -77,9 +142,22 @@ export default function AxleConfigBuilder({ initialAxles, availableTires = [], o
                     <h2 className="text-xl font-bold text-gray-800 tracking-tight">Configurador de Eixos</h2>
                     <p className="text-gray-400 text-sm font-medium">Monte o layout do veículo e vincule os pneus</p>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={removeAxle} className="p-2 text-gray-400 hover:text-rose-500 transition-colors"><Minus size={20} /></button>
-                    <button onClick={addAxle} className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors"><Plus size={20} /></button>
+                <div className="flex items-center gap-4">
+                    {/* Template selector */}
+                    <select
+                        onChange={(e) => e.target.value && applyTemplate(e.target.value)}
+                        className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold border-none focus:ring-2 focus:ring-indigo-200 cursor-pointer"
+                        defaultValue=""
+                    >
+                        <option value="" disabled>📋 Usar Template</option>
+                        {Object.entries(axleTemplates).map(([key, template]) => (
+                            <option key={key} value={key}>{template.name}</option>
+                        ))}
+                    </select>
+                    <div className="flex gap-2">
+                        <button onClick={removeAxle} className="p-2 text-gray-400 hover:text-rose-500 transition-colors"><Minus size={20} /></button>
+                        <button onClick={addAxle} className="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors"><Plus size={20} /></button>
+                    </div>
                 </div>
             </header>
 
