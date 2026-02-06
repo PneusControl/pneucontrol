@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import Link from 'next/link'
+import TireWearChart from '@/components/dashboard/TireWearChart'
+import VehicleAxleMap from '@/components/dashboard/VehicleAxleMap'
 
 export default function DashboardHomePage() {
     const { user } = useAuth()
@@ -95,77 +97,13 @@ export default function DashboardHomePage() {
                 />
             </div>
 
-            {/* Grade Principal: Mapa de Eixos e Simulação */}
+            {/* Grade Principal: Mapa de Eixos e Gráfico */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Mapa de Eixos */}
-                <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col items-center">
-                    <header className="w-full flex justify-between items-center mb-12">
-                        <h3 className="text-xl font-black text-gray-900 tracking-tight">Mapa de Eixos (Scania R450)</h3>
-                        <div className="flex gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                            <div className="w-2 h-2 rounded-full bg-red-600"></div>
-                        </div>
-                    </header>
+                {/* Mapa de Eixos Dinâmico */}
+                <VehicleAxleMap />
 
-                    <div className="relative w-64 h-[400px] flex items-center justify-center">
-                        {/* Diagrama do Caminhão */}
-                        <div className="absolute inset-0 border-4 border-gray-50 rounded-[60px] opacity-50"></div>
-
-                        {/* Eixo Frontal */}
-                        <div className="absolute top-10 flex w-full justify-between items-center px-10">
-                            <TireNode status="ok" label="FL" />
-                            <TireNode status="warning" label="FR" />
-                        </div>
-
-                        {/* Eixo Tração */}
-                        <div className="absolute bottom-32 flex w-full justify-between items-center px-6">
-                            <div className="flex gap-1.5">
-                                <TireNode status="ok" />
-                                <TireNode status="ok" />
-                            </div>
-                            <div className="flex gap-1.5">
-                                <TireNode status="ok" />
-                                <TireNode status="ok" />
-                            </div>
-                        </div>
-
-                        {/* Eixo Truck */}
-                        <div className="absolute bottom-10 flex w-full justify-between items-center px-6">
-                            <div className="flex gap-1.5">
-                                <TireNode status="critical" />
-                                <TireNode status="ok" />
-                            </div>
-                            <div className="flex gap-1.5">
-                                <TireNode status="ok" />
-                                <TireNode status="ok" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Simulação Térmica / IA Vision */}
-                <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col group cursor-pointer relative overflow-hidden">
-                    <header className="flex justify-between items-center mb-8">
-                        <h3 className="text-xl font-black text-gray-900 tracking-tight">Simulação Térmica (IA)</h3>
-                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                            <Camera size={20} />
-                        </div>
-                    </header>
-
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6 border-2 border-dashed border-gray-50 rounded-[32px] group-hover:bg-indigo-50/10 transition-all">
-                        <div className="w-16 h-24 bg-gray-50 flex items-center justify-center rounded-xl shadow-inner relative overflow-hidden">
-                            <Thermometer className="text-gray-200" size={40} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-orange-400/20 to-transparent"></div>
-                        </div>
-                        <p className="text-xs font-bold text-gray-300 uppercase tracking-widest text-center">Clique na câmera para gerar uma análise visual de desgaste simulada por IA.</p>
-                    </div>
-
-                    {/* Overlay de Bloqueio/Empty state estilizado */}
-                    <div className="absolute inset-x-10 bottom-10 top-24 bg-gradient-to-b from-white/0 via-white/80 to-white flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="font-black text-indigo-600 uppercase text-[10px] tracking-widest">Processador IA Pronto</p>
-                    </div>
-                </div>
+                {/* Gráfico de Tendência de Desgaste */}
+                <TireWearChart />
             </div>
         </div>
     )

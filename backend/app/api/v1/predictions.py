@@ -1,94 +1,117 @@
-from fastapi import APIRouter, HTTPException, Depends, status
-from typing import List, Dict, Any, Optional
-from app.core.config import get_settings
-from app.services.prediction.engine import PredictionService
+from fastapi import APIRouter, Depends
 from supabase import Client, create_client
-import logging
+from app.core.config import get_settings
+from typing import List, Dict, Any
+from datetime import datetime, timedelta
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = get_settings()
-prediction_service = PredictionService()
 
 def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
-@router.get("/predictions/tire/{tire_id}")
-async def get_tire_prediction(
-    tire_id: str,
-    tenant_id: str,
-    supabase: Client = Depends(get_supabase)
-):
+
+@router.get("/predictions/wear-history")
+async def get_wear_history(tenant_id: str, supabase: Client = Depends(get_supabase)):
     """
-    Retorna métricas preditivas de um pneu específico.
+    Retorna histórico de desgaste agregado dos últimos 6 meses.
+    Usado para gráficos de tendência no dashboard.
     """
     try:
-        # 1. Buscar dados do pneu
-        tire_result = supabase.table("tire_inventory").select("*").eq("id", tire_id).eq("tenant_id", tenant_id).single().execute()
-        if not tire_result.data:
-            raise HTTPException(status_code=404, detail="Pneu não encontrado")
+        # Buscar inspeções dos últimos 6 meses
+        six_months_ago = (datetime.now() - timedelta(days=180)).isoformat()
         
-        tire = tire_result.data
-
-        # 2. Buscar histórico de inspeções
-        # Nota: Assume-se a existência da tabela inspection_details
-        history_result = supabase.table("inspection_details").select(
-            "created_at, tread_depth, inspections(odometer_km)"
-        ).eq("tire_id", tire_id).order("created_at", desc=False).execute()
-
-        history = []
-        for item in history_result.data:
-            history.append({
-                "date": item["created_at"],
-                "km": item["inspections"]["odometer_km"],
-                "tread": item["tread_depth"]
+        inspections = supabase.table("inspection_details")\
+            .select("created_at, sulco_medio")\
+            .eq("tenant_id", tenant_id)\
+            .gte("created_at", six_months_ago)\
+            .order("created_at")\
+            .execute()
+        
+        # Agregar por mês
+        monthly_data: Dict[str, List[float]] = {}
+        for insp in inspections.data:
+            date = datetime.fromisoformat(insp["created_at"].replace("Z", "+00:00"))
+            month_key = date.strftime("%Y-%m")
+            sulco = insp.get("sulco_medio") or 0
+            
+            if month_key not in monthly_data:
+                monthly_data[month_key] = []
+            monthly_data[month_key].append(sulco)
+        
+        # Calcular média por mês
+        result = []
+        for month, values in sorted(monthly_data.items()):
+            avg_sulco = sum(values) / len(values) if values else 0
+            result.append({
+                "month": month,
+                "sulco_medio": round(avg_sulco, 2),
+                "inspections_count": len(values)
             })
-
-        # 3. Processar métricas
-        tire_data = {
-            "initial_tread": tire.get("initial_tread", 18.0),
-            "initial_km": 0, # Idealmente teríamos o KM de montagem
-            "cost": tire.get("purchase_price", 1200.0),
-            "avg_monthly_km": 5000 # Default
-        }
-
-        metrics = prediction_service.calculate_tire_metrics(history, tire_data)
-        return metrics
-
+        
+        return {"history": result}
     except Exception as e:
-        logger.exception(f"Erro ao calcular predição para pneu {tire_id}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Erro ao buscar histórico: {e}")
+        return {"history": []}
 
-@router.get("/predictions/fleet/rankings")
-async def get_fleet_rankings(
-    tenant_id: str,
-    supabase: Client = Depends(get_supabase)
-):
+
+@router.get("/predictions/tire-lifecycle")
+async def get_tire_lifecycle(tenant_id: str, limit: int = 10, supabase: Client = Depends(get_supabase)):
     """
-    Retorna um ranking de performance por marca/modelo para a frota do tenant.
+    Retorna previsão de vida útil dos pneus com base em desgaste.
+    Ordenado por pneus que precisam de troca mais urgente.
     """
     try:
-        # 1. Buscar todos os pneus do tenant que já tenham dados de performance
-        # Em uma implementação real, isso seria agregado via View no Supabase ou processado em batch
-        tires_result = supabase.table("tire_inventory").select("*").eq("tenant_id", tenant_id).execute()
+        # Buscar pneus em uso com dados de sulco
+        tires = supabase.table("tire_inventory")\
+            .select("id, numero_serie, marca, modelo, sulco_inicial, sulco_atual, km_rodados")\
+            .eq("tenant_id", tenant_id)\
+            .eq("status", "em_uso")\
+            .gt("sulco_inicial", 0)\
+            .order("sulco_atual")\
+            .limit(limit)\
+            .execute()
         
-        # Aqui simplificamos: pegamos os dados atuais. No futuro, usaríamos o Celery para pré-calcular isso.
-        fleet_data = []
-        for tire in tires_result.data:
-            if tire.get("total_km_run") and tire.get("cpk"):
-                fleet_data.append({
-                    "brand": tire["brand"],
-                    "model": tire["model"],
-                    "total_km": tire["total_km_run"],
-                    "cpk": tire["cpk"]
-                })
-
-        if not fleet_data:
-            return {"message": "Dados insuficientes para ranking", "rankings": []}
-
-        rankings = prediction_service.benchmark_brands(fleet_data)
-        return {"rankings": rankings}
-
+        predictions = []
+        for tire in tires.data:
+            sulco_inicial = tire.get("sulco_inicial", 1)
+            sulco_atual = tire.get("sulco_atual", 0)
+            km_rodados = tire.get("km_rodados", 0)
+            
+            # Calcular vida restante percentual
+            vida_percent = (sulco_atual / sulco_inicial) * 100 if sulco_inicial > 0 else 0
+            
+            # Estimar km restantes (se tiver km_rodados)
+            if km_rodados > 0 and sulco_inicial > sulco_atual:
+                desgaste_por_km = (sulco_inicial - sulco_atual) / km_rodados
+                # Sulco mínimo legal = 1.6mm
+                sulco_restante = sulco_atual - 1.6
+                km_restantes = int(sulco_restante / desgaste_por_km) if desgaste_por_km > 0 else 0
+            else:
+                km_restantes = None
+            
+            # Classificar urgência
+            if sulco_atual < 2:
+                urgencia = "CRÍTICO"
+            elif sulco_atual < 3:
+                urgencia = "URGENTE"
+            elif sulco_atual < 5:
+                urgencia = "ATENÇÃO"
+            else:
+                urgencia = "OK"
+            
+            predictions.append({
+                "id": tire["id"],
+                "numero_serie": tire.get("numero_serie", ""),
+                "marca": tire.get("marca", ""),
+                "modelo": tire.get("modelo", ""),
+                "sulco_atual": sulco_atual,
+                "vida_percent": round(vida_percent, 1),
+                "km_restantes": km_restantes,
+                "urgencia": urgencia
+            })
+        
+        return {"predictions": predictions}
     except Exception as e:
-        logger.exception("Erro ao gerar ranking da frota")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Erro ao calcular previsões: {e}")
+        return {"predictions": []}
