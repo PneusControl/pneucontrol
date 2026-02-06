@@ -2,7 +2,7 @@
 import { API_BASE_URL } from '@/lib/api-config'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, ClipboardList, Search, Loader2, Calendar, Truck, User, ChevronRight } from 'lucide-react'
+import { Plus, ClipboardList, Search, Loader2, Calendar, Truck, User, ChevronRight, Gauge } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import Link from 'next/link'
 
@@ -13,9 +13,9 @@ interface Inspection {
     odometer_km: number
     vehicle_id: string
     inspector_id: string
-    vehicles: {
-        plate: string
-    }
+    vehicles?: {
+        placa: string
+    } | null
 }
 
 export default function InspectionHistoryPage() {
@@ -94,7 +94,7 @@ export default function InspectionHistoryPage() {
                                     <Truck size={32} />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-gray-900 tracking-tighter uppercase">{ins.vehicles.plate}</h3>
+                                    <h3 className="text-2xl font-black text-gray-900 tracking-tighter uppercase">{ins.vehicles?.placa || 'N/A'}</h3>
                                     <p className="text-xs text-gray-400 font-mono flex items-center gap-1">
                                         <Gauge size={12} /> {ins.odometer_km.toLocaleString()} KM
                                     </p>
