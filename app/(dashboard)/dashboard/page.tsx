@@ -72,24 +72,24 @@ export default function DashboardHomePage() {
 
                 <StatusCard
                     title="Pneus em Uso"
-                    value={stats?.tires_in_use || '124'}
-                    subtitle="Disponibilidade: 98%"
+                    value={loading ? '...' : (stats?.tires_in_use ?? 0)}
+                    subtitle={`Total: ${stats?.total_tires ?? 0} | Saúde: ${stats?.total_fleet_health ?? 100}%`}
                     icon={<ShieldCheck className="text-emerald-500" />}
                     color="text-emerald-500"
                 />
 
                 <StatusCard
-                    title="Alertas Calor"
-                    value={stats?.heat_alerts || '03'}
-                    subtitle="Risco de Estouro"
+                    title="Alertas Pressão"
+                    value={loading ? '...' : String(stats?.heat_alerts ?? 0).padStart(2, '0')}
+                    subtitle="Últimos 7 dias"
                     icon={<Thermometer className="text-amber-500" />}
                     color="text-amber-500"
                 />
 
                 <StatusCard
                     title="Trocas Urgentes"
-                    value={stats?.urgent_replacements || '05'}
-                    subtitle="Sulco < 1.6mm"
+                    value={loading ? '...' : String(stats?.urgent_replacements ?? 0).padStart(2, '0')}
+                    subtitle="Sulco < 3mm"
                     icon={<AlertCircle className="text-red-600" />}
                     color="text-red-600"
                 />
