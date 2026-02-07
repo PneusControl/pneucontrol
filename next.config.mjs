@@ -1,9 +1,8 @@
 import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  output: 'export',
-  images: { unoptimized: true },
-  trailingSlash: true,
+  // Não usar output: 'export' - quebra middleware e SSR
+  // Para build mobile, use: npm run build:mobile
   typescript: { ignoreBuildErrors: true }
 };
 export default withSentryConfig(nextConfig, {
@@ -11,9 +10,6 @@ export default withSentryConfig(nextConfig, {
   project: "javascript-nextjs",
   silent: !process.env.CI,
   widenClientFileUpload: true,
-
-  // Disabled for static export (mobile build)
-  // tunnelRoute: "/monitoring",
-  // automaticVercelMonitors: true,
+  tunnelRoute: "/monitoring",
+  automaticVercelMonitors: true,
 });
-
