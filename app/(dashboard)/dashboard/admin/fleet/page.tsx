@@ -163,8 +163,8 @@ export default function FleetPage() {
     }
 
     const filteredVehicles = vehicles.filter(v =>
-        v.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.modelo.toLowerCase().includes(searchTerm.toLowerCase())
+        (v.placa?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (v.modelo?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
     return (

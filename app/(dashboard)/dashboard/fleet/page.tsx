@@ -54,8 +54,8 @@ export default function MobileVehiclesPage() {
     }, [tenantId])
 
     const filtered = vehicles.filter(v =>
-        v.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.model.toLowerCase().includes(searchTerm.toLowerCase())
+        (v.plate?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (v.model?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
     return (
