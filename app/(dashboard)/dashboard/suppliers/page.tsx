@@ -129,8 +129,8 @@ export default function SuppliersPage() {
     }
 
     const filteredSuppliers = suppliers.filter(s =>
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.cnpj.includes(search)
+        (s.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+        (s.cnpj || '').includes(search)
     )
 
     if (loading) return (
