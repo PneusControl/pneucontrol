@@ -64,7 +64,11 @@ export default function VehicleAxleMap() {
         )
     }
 
-    if (!vehicle || !vehicle.axle_configuration || vehicle.axle_configuration.length === 0) {
+    // Validação robusta para evitar erros
+    const rawAxles = vehicle?.axle_configuration
+    const axles = Array.isArray(rawAxles) ? rawAxles : []
+
+    if (!vehicle || axles.length === 0) {
         return (
             <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col items-center justify-center h-96">
                 <Truck className="text-gray-200 mb-4" size={48} />
@@ -73,8 +77,6 @@ export default function VehicleAxleMap() {
             </div>
         )
     }
-
-    const axles = vehicle.axle_configuration
 
     return (
         <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col items-center">
@@ -111,10 +113,10 @@ export default function VehicleAxleMap() {
 
                 {/* Eixos dinâmicos */}
                 {axles.map((axle, index) => (
-                    <div key={axle.id} className="relative flex w-full justify-between items-center px-2">
+                    <div key={axle.id ?? index} className="relative flex w-full justify-between items-center px-2">
                         {/* Rodas esquerdas */}
                         <div className="flex gap-1">
-                            {axle.tires.slice(0, axle.is_dual ? 2 : 1).map((tireId, i) => (
+                            {(Array.isArray(axle.tires) ? axle.tires : []).slice(0, axle.is_dual ? 2 : 1).map((tireId, i) => (
                                 <TireNode
                                     key={`L-${i}`}
                                     status={tireId ? 'ok' : 'empty'}
@@ -125,10 +127,10 @@ export default function VehicleAxleMap() {
 
                         {/* Barra do eixo */}
                         <div className={`flex-1 mx-2 h-3 rounded-full ${axle.type === 'traction'
-                                ? 'bg-indigo-400 shadow-lg shadow-indigo-100'
-                                : axle.type === 'dir'
-                                    ? 'bg-blue-300'
-                                    : 'bg-gray-300'
+                            ? 'bg-indigo-400 shadow-lg shadow-indigo-100'
+                            : axle.type === 'dir'
+                                ? 'bg-blue-300'
+                                : 'bg-gray-300'
                             }`}>
                             <div className="text-[8px] text-center text-white font-black uppercase mt-0.5">
                                 {axle.type === 'traction' ? 'TRÇ' : axle.type === 'dir' ? 'DIR' : 'CAR'}
@@ -137,7 +139,7 @@ export default function VehicleAxleMap() {
 
                         {/* Rodas direitas */}
                         <div className="flex gap-1">
-                            {axle.tires.slice(axle.is_dual ? 2 : 1).map((tireId, i) => (
+                            {(Array.isArray(axle.tires) ? axle.tires : []).slice(axle.is_dual ? 2 : 1).map((tireId, i) => (
                                 <TireNode
                                     key={`R-${i}`}
                                     status={tireId ? 'ok' : 'empty'}
@@ -158,7 +160,7 @@ export default function VehicleAxleMap() {
                 <div>
                     <span className="text-gray-400 font-bold">Pneus montados:</span>
                     <span className="ml-2 font-black text-gray-700">
-                        {axles.reduce((acc, axle) => acc + axle.tires.filter(t => t !== null).length, 0)} / {axles.reduce((acc, axle) => acc + axle.tires.length, 0)}
+                        {axles.reduce((acc, axle) => acc + (Array.isArray(axle.tires) ? axle.tires : []).filter(t => t !== null).length, 0)} / {axles.reduce((acc, axle) => acc + (Array.isArray(axle.tires) ? axle.tires : []).length, 0)}
                     </span>
                 </div>
             </div>
