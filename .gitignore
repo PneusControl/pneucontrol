@@ -40,9 +40,7 @@ lerna-debug.log*
 *.sw?
 *.md
 *.markdown
-# Android/iOS (Capacitor builds)
-android/
-ios/
+# Android/iOS (versionar para builds mobile)
 
 # Python
 *.pyc

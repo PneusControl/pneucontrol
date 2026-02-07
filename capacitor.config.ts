@@ -4,17 +4,24 @@ const config: CapacitorConfig = {
   appId: 'com.pneucontrol.v3',
   appName: 'Pneu Control',
   webDir: 'out',
-  bundledWebRuntime: false,
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    iosScheme: 'https'
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 3000,
+      launchShowDuration: 2000,
       backgroundColor: "#6366f1",
       showSpinner: true,
-      androidScaleType: "CENTER_CROP"
+      androidScaleType: "CENTER_CROP",
+      iosSpinnerStyle: "large"
     }
+  },
+  android: {
+    allowMixedContent: true
+  },
+  ios: {
+    contentInset: 'always'
   }
 };
 
