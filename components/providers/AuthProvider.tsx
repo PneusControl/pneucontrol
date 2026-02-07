@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
@@ -21,54 +21,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isSystemAdmin, setIsSystemAdmin] = useState(false)
   const [profile, setProfile] = useState<any>(null)
-  const supabase = createClient()
+
+  // Usar useMemo para evitar criar novo cliente a cada render
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
+
+  // Ref para evitar chamadas duplicadas
+  const hasInitialized = useRef(false)
 
   const checkIsSystemAdmin = async (email: string) => {
     try {
-      console.log('[AuthDebug] Verificando SysAdmin para:', email)
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('system_admins')
         .select('id')
         .eq('email', email)
-        .maybeSingle() // Alterado de single() para evitar erro 406 se não existir
+        .maybeSingle()
 
-      const isSys = !!data
-      console.log('[AuthDebug] Resultado SysAdmin:', isSys, data, error)
-      setIsSystemAdmin(isSys)
+      setIsSystemAdmin(!!data)
     } catch (err) {
-      console.error('[AuthDebug] Erro ao verificar system_admin:', err)
+      console.error('[Auth] Erro verificar system_admin:', err)
       setIsSystemAdmin(false)
     }
   }
 
   const fetchProfile = async (userId: string, sessionUser: any = null) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .maybeSingle() // Evita 406 se não houver perfil ainda
+        .maybeSingle()
 
       if (data) {
         setProfile(data)
-      } else {
-        console.warn('Perfil público não encontrado ou erro de fetch. Usando metadata de fallback.')
-        if (sessionUser) {
-          // CRITICAL FIX: Se o banco falhar, usamos o JWT para garantir acesso Admin
-          // Isso previne que o Admin vire "Operator" e veja tela branca
-          setProfile({
-            id: sessionUser.id,
-            role: sessionUser.user_metadata?.role || 'operator',
-            full_name: sessionUser.user_metadata?.full_name,
-            email: sessionUser.email,
-            permissions: sessionUser.user_metadata?.permissions || []
-          })
-        }
+      } else if (sessionUser) {
+        // Fallback usando JWT metadata
+        setProfile({
+          id: sessionUser.id,
+          role: sessionUser.user_metadata?.role || 'operator',
+          full_name: sessionUser.user_metadata?.full_name,
+          email: sessionUser.email,
+          permissions: sessionUser.user_metadata?.permissions || []
+        })
       }
     } catch (err) {
-      console.error('Erro ao buscar perfil do usuário:', err)
-      // Mesmo no catch, tentamos o fallback se tivermos user
+      console.error('Erro ao buscar perfil:', err)
       if (sessionUser) {
         setProfile({
           id: sessionUser.id,
@@ -82,7 +79,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const setData = async () => {
+    // Evitar inicialização duplicada
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
+    const initAuth = async () => {
       const { data: { session }, error } = await supabase.auth.getSession()
       if (error) {
         console.error('Erro getSession:', error)
@@ -95,17 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session?.user) {
         await checkIsSystemAdmin(session.user.email!)
-        // Importante: Passamos o objeto user para a função de perfil poder usar como backup
         await fetchProfile(session.user.id, session.user)
-      } else {
-        setIsSystemAdmin(false)
-        setProfile(null)
       }
 
       setLoading(false)
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Listener para mudanças de auth (login/logout APÓS inicialização)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Ignorar evento INITIAL_SESSION para evitar duplicação
+      if (event === 'INITIAL_SESSION') return
+
       setSession(session)
       setUser(session?.user || null)
 
@@ -116,17 +117,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsSystemAdmin(false)
         setProfile(null)
       }
-
-      setLoading(false)
     })
 
-    setData()
+    initAuth()
 
     return () => {
       subscription.unsubscribe()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [supabase])
 
   const signOut = async () => {
     await supabase.auth.signOut()
