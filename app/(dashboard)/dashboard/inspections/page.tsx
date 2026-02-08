@@ -96,7 +96,7 @@ export default function InspectionHistoryPage() {
                                 <div>
                                     <h3 className="text-2xl font-black text-gray-900 tracking-tighter uppercase">{ins.vehicles?.placa || 'N/A'}</h3>
                                     <p className="text-xs text-gray-400 font-mono flex items-center gap-1">
-                                        <Gauge size={12} /> {ins.odometer_km.toLocaleString()} KM
+                                        <Gauge size={12} /> {ins.odometer_km?.toLocaleString() || '0'} KM
                                     </p>
                                 </div>
                             </div>

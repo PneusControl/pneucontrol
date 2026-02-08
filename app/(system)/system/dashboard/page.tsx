@@ -88,7 +88,7 @@ export default function SystemDashboardPage() {
                 <KpiCard
                     icon={<Activity className="text-orange-600" />}
                     label="Inspeções Totais"
-                    value={stats.totalInspections.toLocaleString()}
+                    value={stats.totalInspections?.toLocaleString() || '0'}
                     trend="Analytics"
                 />
             </div>

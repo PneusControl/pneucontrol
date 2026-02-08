@@ -225,7 +225,7 @@ export default function FleetPage() {
                                 </div>
                                 <div className="p-4 bg-gray-50 rounded-3xl">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Km Atual</p>
-                                    <p className="font-black text-gray-700">{v.km_atual.toLocaleString()}</p>
+                                    <p className="font-black text-gray-700">{v.km_atual?.toLocaleString() || '0'}</p>
                                 </div>
                             </div>
 
