@@ -15,6 +15,7 @@ export interface OfflineVehicle {
     model: string;
     axle_configuration: any;
     tenant_id: string;
+    current_km?: number;
 }
 
 export interface PendingInspection {
@@ -36,7 +37,7 @@ export class PneuControlDB extends Dexie {
 
     constructor() {
         super('PneuControlDB');
-        this.version(1).stores({
+        this.version(2).stores({
             tires: 'id, serial_number, tenant_id',
             vehicles: 'id, plate, tenant_id',
             pending_inspections: '++id, id_uuid, tenant_id, synced'

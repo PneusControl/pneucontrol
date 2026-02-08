@@ -14,6 +14,7 @@ interface Vehicle {
     brand: string
     model: string
     axle_configuration: any[]
+    current_km?: number
 }
 
 interface Tire {
@@ -51,9 +52,11 @@ function NewInspectionContent() {
     const [submitting, setSubmitting] = useState(false)
 
     // Step 1: Vehicle Selection
+    const [vehicles, setVehicles] = useState<Vehicle[]>([])
     const [searchPlate, setSearchPlate] = useState('')
     const [vehicle, setVehicle] = useState<Vehicle | null>(null)
     const [odometer, setOdometer] = useState<number>(0)
+    const [suggestedVehicles, setSuggestedVehicles] = useState<Vehicle[]>([])
 
     // Step 2: Inspection Data
     const [inspectedTires, setInspectedTires] = useState<Record<string, InspectionItemData>>({})
@@ -63,10 +66,79 @@ function NewInspectionContent() {
     const plateParam = searchParams.get('plate')
 
     useEffect(() => {
+        const loadInitialVehicles = async () => {
+            if (!tenantId) return
+            try {
+                // 1. Tentar Offline (Dexie)
+                const cached = await db.vehicles.where('tenant_id').equals(tenantId).toArray()
+                if (cached.length > 0) {
+                    const mapped = cached.map(v => ({
+                        id: v.id,
+                        plate: v.plate,
+                        brand: v.brand,
+                        model: v.model,
+                        axle_configuration: v.axle_configuration
+                    }))
+                    setVehicles(mapped as any)
+                    setSuggestedVehicles(mapped as any)
+                }
+
+                // 2. Tentar API
+                const baseUrl = API_BASE_URL
+                const response = await fetch(`${baseUrl}/api/v1/vehicles?tenant_id=${tenantId}`)
+                if (response.ok) {
+                    const data = await response.json()
+                    // Mapeamento caso a API retorne em português
+                    const mapped = data.map((v: any) => ({
+                        id: v.id,
+                        plate: v.placa || v.plate,
+                        brand: v.marca || v.brand,
+                        model: v.modelo || v.model,
+                        axle_configuration: v.axle_configuration,
+                        current_km: v.km_atual || v.current_km
+                    }))
+                    setVehicles(mapped)
+                    setSuggestedVehicles(mapped)
+
+                    // Atualizar Dexie para manter offline atualizado
+                    await db.vehicles.where('tenant_id').equals(tenantId).delete()
+                    await db.vehicles.bulkAdd(mapped.map((v: any) => ({
+                        id: v.id,
+                        plate: v.plate,
+                        brand: v.brand,
+                        model: v.model,
+                        axle_configuration: v.axle_configuration,
+                        tenant_id: tenantId,
+                        current_km: v.current_km
+                    })))
+                }
+            } catch (err) {
+                console.warn('Erro ao carregar veículos:', err)
+            }
+        }
+        loadInitialVehicles()
+    }, [tenantId])
+
+    useEffect(() => {
         if (plateParam) {
             setSearchPlate(plateParam)
         }
     }, [plateParam])
+
+    useEffect(() => {
+        if (searchPlate) {
+            const filtered = vehicles.filter(v => (v.plate || '').toLowerCase().includes(searchPlate.toLowerCase()))
+            setSuggestedVehicles(filtered)
+        } else {
+            setSuggestedVehicles(vehicles)
+        }
+    }, [searchPlate, vehicles])
+
+    const selectVehicle = (v: Vehicle) => {
+        setVehicle(v)
+        setOdometer((v as any).current_km || 0)
+        setSearchPlate(v.plate)
+    }
 
     // IA/Photo State
     const [analyzing, setAnalyzing] = useState(false)
@@ -75,39 +147,40 @@ function NewInspectionContent() {
         if (!searchPlate || !tenantId) return
         setLoading(true)
         try {
-            // 1. Tentar API
+            // Tentar encontrar na lista já carregada
+            const found = vehicles.find(v => (v.plate || '').toUpperCase() === searchPlate.toUpperCase())
+            if (found) {
+                setVehicle(found)
+                setOdometer((found as any).current_km || 0)
+                setLoading(false)
+                return
+            }
+
+            // Fallback para API caso não esteja na lista inicial (ex: cadastrado agora)
             const baseUrl = API_BASE_URL
             const response = await fetch(`${baseUrl}/api/v1/vehicles?tenant_id=${tenantId}&plate=${searchPlate.toUpperCase()}`)
 
             if (response.ok) {
                 const data = await response.json()
                 if (data && data.length > 0) {
-                    setVehicle(data[0])
-                    setOdometer(data[0].current_km || 0)
+                    const v = data[0]
+                    const mapped = {
+                        id: v.id,
+                        plate: v.placa || v.plate,
+                        brand: v.marca || v.brand,
+                        model: v.modelo || v.model,
+                        axle_configuration: v.axle_configuration,
+                        current_km: v.km_atual || v.current_km
+                    }
+                    setVehicle(mapped as any)
+                    setOdometer(mapped.current_km || 0)
                     return
                 }
             }
 
-            // 2. Fallback para Offline (Dexie)
-            const offlineVehicle = await db.vehicles
-                .where('plate')
-                .equals(searchPlate.toUpperCase())
-                .and(v => v.tenant_id === tenantId)
-                .first()
-
-            if (offlineVehicle) {
-                setVehicle(offlineVehicle as any)
-                setOdometer(0) // No offline o KM pode estar desatualizado
-            } else {
-                alert('Veículo não encontrado (Online ou Offline)')
-            }
+            alert('Veículo não encontrado')
         } catch (err) {
-            console.warn('Erro ao buscar veículo online, tentando offline...', err)
-            const offlineVehicle = await db.vehicles
-                .where('plate')
-                .equals(searchPlate.toUpperCase())
-                .first()
-            if (offlineVehicle) setVehicle(offlineVehicle as any)
+            console.error('Erro ao buscar veículo:', err)
         } finally {
             setLoading(false)
         }
@@ -218,24 +291,53 @@ function NewInspectionContent() {
                     </header>
 
                     <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-50 flex flex-col gap-8">
-                        <div className="flex gap-4">
-                            <div className="flex-1 relative">
-                                <input
-                                    type="text"
-                                    placeholder="Placa do Veículo (ABC-1234)"
-                                    value={searchPlate}
-                                    onChange={(e) => setSearchPlate(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-[24px] py-5 px-8 font-black text-xl uppercase placeholder:text-gray-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                                />
-                                <Search className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-300" />
+                        <div className="flex flex-col gap-6">
+                            <div className="flex gap-4">
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Placa do Veículo (ABC-1234)"
+                                        value={searchPlate}
+                                        onChange={(e) => setSearchPlate(e.target.value)}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-[24px] py-5 px-8 font-black text-xl uppercase placeholder:text-gray-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                    />
+                                    <Search className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-300" />
+                                </div>
+                                <button
+                                    onClick={searchVehicle}
+                                    disabled={loading}
+                                    className="bg-indigo-600 text-white px-10 rounded-[24px] font-bold hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                >
+                                    {loading ? <Loader2 className="animate-spin" /> : 'Buscar'}
+                                </button>
                             </div>
-                            <button
-                                onClick={searchVehicle}
-                                disabled={loading}
-                                className="bg-indigo-600 text-white px-10 rounded-[24px] font-bold hover:bg-indigo-700 transition-all disabled:opacity-50"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : 'Buscar'}
-                            </button>
+
+                            {/* Listagem de Veículos Disponíveis */}
+                            {!vehicle && suggestedVehicles.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto p-2 pr-4 scrollbar-thin scrollbar-thumb-gray-200">
+                                    {suggestedVehicles.map((v) => (
+                                        <button
+                                            key={v.id}
+                                            onClick={() => selectVehicle(v)}
+                                            className="flex items-center gap-4 p-5 bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 rounded-[24px] transition-all text-left group"
+                                        >
+                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                                                <Truck size={24} />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-black text-gray-900 leading-none mb-1 uppercase">{v.plate}</h3>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{v.brand} {v.model}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {!vehicle && suggestedVehicles.length === 0 && searchPlate && (
+                                <div className="text-center py-10 bg-gray-50 rounded-[32px] border border-dashed border-gray-200">
+                                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Nenhum veículo encontrado com esta placa</p>
+                                </div>
+                            )}
                         </div>
 
                         {vehicle && (

@@ -110,6 +110,7 @@ async def create_vehicle(vehicle: VehicleCreate, supabase: Client = Depends(get_
 async def list_vehicles(
     tenant_id: str = Query(..., description="ID do tenant"),
     status_filter: Optional[str] = Query(None, alias="status"),
+    placa_filter: Optional[str] = Query(None, alias="plate"),
     supabase: Client = Depends(get_supabase)
 ):
     """Lista veículos de um tenant."""
@@ -118,6 +119,9 @@ async def list_vehicles(
         
         if status_filter:
             query = query.eq("status", status_filter)
+        
+        if placa_filter:
+            query = query.eq("placa", placa_filter.upper())
         
         result = query.order("placa").execute()
         return result.data or []
