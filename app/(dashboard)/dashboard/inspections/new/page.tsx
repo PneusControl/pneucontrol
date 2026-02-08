@@ -313,7 +313,7 @@ function NewInspectionContent() {
                             </div>
 
                             {/* Listagem de Veículos Disponíveis */}
-                            {!vehicle && suggestedVehicles.length > 0 && (
+                            {!vehicle && Array.isArray(suggestedVehicles) && suggestedVehicles.length > 0 && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto p-2 pr-4 scrollbar-thin scrollbar-thumb-gray-200">
                                     {suggestedVehicles.map((v) => (
                                         <button
@@ -390,11 +390,11 @@ function NewInspectionContent() {
                         {/* Diagrama de Eixos (Simplificado p/ visualização) */}
                         <div className="bg-white rounded-[40px] p-8 border border-gray-50 shadow-sm flex flex-col items-center gap-12">
                             <div className="w-32 h-16 bg-gray-100 rounded-t-3xl border-b-4 border-gray-200"></div>
-                            {vehicle?.axle_configuration.map((axle: any) => (
+                            {(Array.isArray(vehicle?.axle_configuration) ? vehicle.axle_configuration : []).map((axle: any) => (
                                 <div key={axle.id} className="relative w-full flex flex-col items-center gap-6">
                                     <div className="h-3 bg-gray-200 rounded-full w-full mx-10"></div>
                                     <div className="absolute left-0 flex gap-1">
-                                        {axle.tires.slice(0, axle.is_dual ? 2 : 1).map((tireId: string, idx: number) => (
+                                        {(Array.isArray(axle.tires) ? axle.tires : []).slice(0, axle.is_dual ? 2 : 1).map((tireId: string, idx: number) => (
                                             <TireButton
                                                 key={`L-${idx}`}
                                                 id={tireId}
@@ -405,7 +405,7 @@ function NewInspectionContent() {
                                         ))}
                                     </div>
                                     <div className="absolute right-0 flex gap-1">
-                                        {axle.tires.slice(axle.is_dual ? 2 : 1).map((tireId: string, idx: number) => (
+                                        {(Array.isArray(axle.tires) ? axle.tires : []).slice(axle.is_dual ? 2 : 1).map((tireId: string, idx: number) => (
                                             <TireButton
                                                 key={`R-${idx}`}
                                                 id={tireId}
@@ -549,7 +549,7 @@ function NewInspectionContent() {
                             <div className="text-center px-4">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Restantes</p>
                                 <p className="font-black text-2xl text-rose-300">
-                                    {(vehicle?.axle_configuration.reduce((acc: number, axle: any) => acc + (axle.is_dual ? 4 : 2), 0) || 0) - Object.keys(inspectedTires).length}
+                                    {((Array.isArray(vehicle?.axle_configuration) ? vehicle.axle_configuration : []).reduce((acc: number, axle: any) => acc + (axle.is_dual ? 4 : 2), 0) || 0) - Object.keys(inspectedTires).length}
                                 </p>
                             </div>
                         </div>
