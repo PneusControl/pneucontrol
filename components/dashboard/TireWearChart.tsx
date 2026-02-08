@@ -46,7 +46,7 @@ export default function TireWearChart() {
         return `${months[parseInt(m) - 1]}/${year.slice(2)}`
     }
 
-    const chartData = data.map(d => ({
+    const chartData = (Array.isArray(data) ? data : []).map(d => ({
         ...d,
         name: formatMonth(d.month)
     }))
@@ -137,15 +137,15 @@ export default function TireWearChart() {
                 <div>
                     <span className="text-gray-400 font-bold">Total de Inspeções:</span>
                     <span className="ml-2 font-black text-gray-700">
-                        {data.reduce((acc, d) => acc + d.inspections_count, 0)}
+                        {(Array.isArray(data) ? data : []).reduce((acc, d) => acc + d.inspections_count, 0)}
                     </span>
                 </div>
                 {data.length >= 2 && (
                     <div>
                         <span className="text-gray-400 font-bold">Variação:</span>
                         <span className={`ml-2 font-black ${data[data.length - 1].sulco_medio < data[0].sulco_medio
-                                ? 'text-amber-500'
-                                : 'text-emerald-500'
+                            ? 'text-amber-500'
+                            : 'text-emerald-500'
                             }`}>
                             {(data[data.length - 1].sulco_medio - data[0].sulco_medio).toFixed(2)} mm
                         </span>

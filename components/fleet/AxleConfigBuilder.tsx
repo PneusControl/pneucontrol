@@ -81,9 +81,16 @@ export default function AxleConfigBuilder({ initialAxles, availableTires = [], o
         }
     }
 
-    const [axles, setAxles] = useState<Axle[]>(initialAxles || [
-        { id: 1, type: 'dir', is_dual: false, tires: [null, null] }
-    ])
+    const [axles, setAxles] = useState<Axle[]>([])
+
+    // Sincronizar estado com props iniciais
+    React.useEffect(() => {
+        if (Array.isArray(initialAxles) && initialAxles.length > 0) {
+            setAxles(initialAxles)
+        } else {
+            setAxles([{ id: 1, type: 'dir', is_dual: false, tires: [null, null] }])
+        }
+    }, [initialAxles])
     const [selecting, setSelecting] = useState<{ axleId: number, index: number } | null>(null)
 
     const applyTemplate = (templateKey: string) => {
@@ -150,7 +157,11 @@ export default function AxleConfigBuilder({ initialAxles, availableTires = [], o
                         defaultValue=""
                     >
                         <option value="" disabled>📋 Usar Template</option>
-                        {Object.entries(axleTemplates).map(([key, template]) => (
+                        {Array.isArray(axleTemplates) && Object.entries(axleTemplates).map(([key, template]) => (
+                            <option key={key} value={key}>{template.name}</option>
+                        ))}
+                        {/* Fallback caso axleTemplates seja objeto (como definido no topo) */}
+                        {!Array.isArray(axleTemplates) && Object.entries(axleTemplates).map(([key, template]) => (
                             <option key={key} value={key}>{template.name}</option>
                         ))}
                     </select>
@@ -166,11 +177,11 @@ export default function AxleConfigBuilder({ initialAxles, availableTires = [], o
                     <div className="absolute top-4 left-6 right-6 h-3 bg-white/40 rounded-full"></div>
                 </div>
 
-                {axles.map((axle) => (
+                {Array.isArray(axles) && axles.map((axle) => (
                     <div key={axle.id} className="relative flex flex-col items-center w-full max-w-sm">
                         {/* Rodas esquerdas */}
                         <div className="absolute left-0 flex gap-1">
-                            {axle.tires.slice(0, axle.is_dual ? 2 : 1).map((tireId, i) => (
+                            {(Array.isArray(axle.tires) ? axle.tires : []).slice(0, axle.is_dual ? 2 : 1).map((tireId, i) => (
                                 <TireSlot
                                     key={`L-${i}`}
                                     serial={availableTires.find(t => t.id === tireId)?.serial_number}
@@ -184,7 +195,7 @@ export default function AxleConfigBuilder({ initialAxles, availableTires = [], o
 
                         {/* Rodas direitas */}
                         <div className="absolute right-0 flex gap-1">
-                            {axle.tires.slice(axle.is_dual ? 2 : 1).map((tireId, i) => {
+                            {(Array.isArray(axle.tires) ? axle.tires : []).slice(axle.is_dual ? 2 : 1).map((tireId, i) => {
                                 const realIndex = axle.is_dual ? i + 2 : i + 1
                                 return (
                                     <TireSlot
@@ -227,7 +238,7 @@ export default function AxleConfigBuilder({ initialAxles, availableTires = [], o
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                        {availableTires.length === 0 ? (
+                        {(!Array.isArray(availableTires) || availableTires.length === 0) ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <Info className="text-gray-300 mb-4" size={40} />
                                 <p className="text-gray-500 font-bold">Nenhum pneu em estoque</p>

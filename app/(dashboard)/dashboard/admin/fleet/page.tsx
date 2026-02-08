@@ -70,7 +70,7 @@ export default function FleetPage() {
                 km_atual: vehicle.km_atual,
                 status: vehicle.status,
                 observacoes: vehicle.observacoes || '',
-                axle_configuration: vehicle.axle_configuration || []
+                axle_configuration: Array.isArray(vehicle.axle_configuration) ? vehicle.axle_configuration : []
             })
         } else {
             setEditingVehicle(null)
